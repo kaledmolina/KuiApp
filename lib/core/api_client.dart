@@ -1,5 +1,6 @@
 
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
   static const String baseUrl = 'https://kui.molinau.com';
@@ -15,7 +16,18 @@ class ApiClient {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-        ));
+        )) {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        const storage = FlutterSecureStorage();
+        final token = await storage.read(key: 'jwt_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ));
+  }
 
   Dio get dio => _dio;
 }
