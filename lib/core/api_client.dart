@@ -23,6 +23,9 @@ class ApiClient {
         final token = await storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
+          print('DEBUG: Token attached to request: ${options.path}');
+        } else {
+          print('DEBUG: No token found for request: ${options.path}');
         }
         return handler.next(options);
       },
