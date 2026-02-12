@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -60,7 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         'Welcome Back',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.blue[900],
@@ -69,7 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Sign in to your account',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
                           color: Colors.grey[600],
                         ),
                       ),
@@ -159,7 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 )
                               : Text(
                                   'Sign In',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
