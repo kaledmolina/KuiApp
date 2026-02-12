@@ -20,7 +20,7 @@ class AuthService {
         // Adjust based on actual API response structure
         // Assuming { "token": "...", "user": { ... } }
         return {
-          'token': data['token'],
+          'token': data['access_token'],
           'user': User.fromJson(data['user']),
         };
       } else {
