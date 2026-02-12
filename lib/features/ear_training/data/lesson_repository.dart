@@ -1,0 +1,65 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../core/api_client.dart';
+import '../models/lesson_config.dart';
+
+class LessonRepository {
+  final ApiClient _apiClient;
+
+  LessonRepository(this._apiClient);
+
+  Future<LessonConfig> getLessonConfig(int levelId) async {
+    try {
+      final response = await _apiClient.dio.get('/api/levels/$levelId');
+      // The API returns the Level object, which has a 'config' field
+      if (response.statusCode == 200) {
+        return LessonConfig.fromJson(response.data['config']);
+      } else {
+        throw Exception('Failed to load lesson config');
+      }
+    } catch (e) {
+      throw Exception('Error loading lesson config: $e');
+    }
+  }
+
+  Future<List<NoteAudio>> getNoteAudioList(int octave) async {
+    try {
+      // Fetch notes for the specific octave
+      final response = await _apiClient.dio.get('/api/notes', queryParameters: {'octave': octave});
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => NoteAudio.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load notes');
+      }
+    } catch (e) {
+      throw Exception('Error loading notes: $e');
+    }
+  }
+
+  Future<String> downloadAudio(String url, String filename) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$filename');
+
+      if (await file.exists()) {
+        return file.path;
+      }
+
+      String downloadUrl = url;
+      if (!url.startsWith('http')) {
+         if (url.startsWith('/')) {
+             downloadUrl = '${ApiClient.baseUrl}$url';
+         } else {
+             downloadUrl = '${ApiClient.baseUrl}/$url';
+         }
+      }
+
+      await _apiClient.dio.download(downloadUrl, file.path);
+      return file.path;
+    } catch (e) {
+      throw Exception('Error downloading audio: $e');
+    }
+  }
+}
