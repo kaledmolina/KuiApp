@@ -38,6 +38,29 @@ class LessonRepository {
     }
   }
 
+  Future<bool> deductLife() async {
+    try {
+      final response = await _apiClient.dio.post('/api/gamification/deduct-life');
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      // If 400 (no lives), we treat it as successfully "failed to deduct" or just return false
+      return false;
+    }
+  }
+
+  Future<dynamic> getUser() async {
+     try {
+       final response = await _apiClient.dio.get('/api/user');
+       return response.data;
+     } catch (e) {
+       throw Exception('Failed to load user');
+     }
+  }
+
   Future<String> downloadAudio(String url, String filename) async {
     try {
       final dir = await getApplicationDocumentsDirectory();

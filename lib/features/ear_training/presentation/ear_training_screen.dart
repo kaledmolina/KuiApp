@@ -1,8 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:math';
 import '../data/lesson_repository.dart';
 import '../models/lesson_config.dart';
+import '../../auth/models/user_model.dart';
 
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
@@ -16,7 +18,7 @@ class EarTrainingScreen extends StatefulWidget {
 class _EarTrainingScreenState extends State<EarTrainingScreen> {
   bool isLoading = true;
   String? error;
-  List<NoteAudio> lessonNotes = []; // Notes filtered by lesson config
+  List<NoteAudio> lessonNotes = [];
   
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Random _random = Random();
@@ -26,6 +28,9 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
   List<NoteAudio> options = [];
   bool? isCorrect;
   String feedback = '';
+  
+  // Gamification State
+  int lives = 5;
 
   @override
   void initState() {
@@ -41,6 +46,10 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
 
   Future<void> _loadLesson() async {
     try {
+      // 0. Get User Stats (Lives)
+      final userData = await widget.repository.getUser();
+      final user = User.fromJson(userData);
+      
       // 1. Get Config for Lesson 1
       final config = await widget.repository.getLessonConfig(1);
       
@@ -62,6 +71,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       if (mounted) {
         setState(() {
           isLoading = false;
+          lives = user.lives;
         });
         _startNewRound();
       }
@@ -99,17 +109,17 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
   Future<void> _playTargetSound() async {
     if (targetNote == null) return;
     try {
-       // Get local path (should be cached already)
        final path = await widget.repository.downloadAudio(targetNote!.filePath, '${targetNote!.fullName}.webm');
        await _audioPlayer.stop();
        await _audioPlayer.play(DeviceFileSource(path));
     } catch (e) {
        debugPrint("Error playing sound: $e");
-       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error playing sound: $e')));
     }
   }
 
-  void _checkAnswer(NoteAudio selected) {
+  Future<void> _checkAnswer(NoteAudio selected) async {
+    if (isCorrect != null) return; // Prevent double taps during feedback
+
     if (selected == targetNote) {
        setState(() {
          isCorrect = true;
@@ -120,13 +130,56 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
          if (mounted) _startNewRound();
        });
     } else {
+       // Wrong Answer Logic
        setState(() {
          isCorrect = false;
-         feedback = 'Wrong! Try again.';
+         feedback = 'Wrong!';
+         lives--; 
        });
-       // Replay sound for hint?
-       // _playTargetSound(); 
+       
+       // Deduct life on server (fire and forget or await?)
+       // Better to await to ensure sync, but for UX speed fire and forget is okish if UI updates immediately
+       // Let's fire and forget for UI responsiveness, but logic depends on local 'lives'
+       widget.repository.deductLife().then((success) {
+         if (!success) debugPrint("Failed to deduct life on server");
+       });
+
+       if (lives <= 0) {
+         _showGameOverDialog();
+       } else {
+         Future.delayed(const Duration(milliseconds: 1000), () {
+            if (mounted) {
+               setState(() {
+                  isCorrect = null; // Reset for retry? Or next round?
+                  // Usually Duolingo lets you retry or moves on. Let's move to next for flow flow.
+                  // Actually, let's just reset state to allow retry if not game over? 
+                  // No, Ear Training usually reveals answer. 
+                  // Let's reveal answer via text and move on.
+                  _startNewRound();
+               });
+            }
+         });
+       }
     }
+  }
+
+  void _showGameOverDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Game Over"),
+        content: const Text("You ran out of lives! Wait for them to regenerate."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              context.go('/home');
+            },
+            child: const Text("Back to Home"),
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -145,7 +198,21 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ear Training: Lesson 1')),
+      appBar: AppBar(
+        title: const Text('Ear Training'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.favorite, color: Colors.red),
+                const SizedBox(width: 8),
+                Text('$lives', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          )
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -160,7 +227,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                    color: Colors.blue.shade100,
                    shape: BoxShape.circle,
                    boxShadow: [
-                     BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+                     const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
                    ]
                  ),
                  child: const Icon(Icons.volume_up_rounded, size: 64, color: Colors.blue),
@@ -183,10 +250,17 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                      style: ElevatedButton.styleFrom(
                        backgroundColor: isCorrect == true && opt == targetNote 
                            ? Colors.green 
-                           : (isCorrect == false && opt != targetNote ? null : Colors.white),
+                           : (isCorrect == false && opt != targetNote 
+                                ? (opt == selectedOption ? Colors.red : null) // Highlight wrong selection? 
+                                : Colors.white),
                        foregroundColor: Colors.black,
                      ),
-                     onPressed: isCorrect == true ? null : () => _checkAnswer(opt),
+                     onPressed: (isCorrect != null || lives <= 0) ? null : () {
+                        // Hack to track selected option for color?
+                        // For simplicity passing opt to checkAnswer
+                        selectedOption = opt;
+                        _checkAnswer(opt);
+                     },
                      child: Text(opt.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                    ),
                  )).toList(),
@@ -205,4 +279,6 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       )
     );
   }
+  
+  NoteAudio? selectedOption;
 }
