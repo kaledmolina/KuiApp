@@ -149,6 +149,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
         ],
       ),
     );
+  }
 
   void _startNewRound() {
     if (lessonNotes.isEmpty) return;
