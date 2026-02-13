@@ -34,7 +34,10 @@ class AuthService {
         // Network or other error
         throw Exception('Network error: ${e.message}');
       }
-    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
   Future<User> getUser() async {
     try {
       final response = await _apiClient.dio.get('/api/user');
