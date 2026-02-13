@@ -3,11 +3,26 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/api_client.dart';
 import '../models/lesson_config.dart';
+import '../models/level_model.dart';
 
 class LessonRepository {
   final ApiClient _apiClient;
 
   LessonRepository(this._apiClient);
+
+  Future<List<Level>> getLevels() async {
+    try {
+      final response = await _apiClient.dio.get('/api/curriculum'); // API route is /curriculum for list
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Level.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load levels');
+      }
+    } catch (e) {
+      throw Exception('Error loading levels: $e');
+    }
+  }
 
   Future<LessonConfig> getLessonConfig(int levelId) async {
     try {

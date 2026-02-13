@@ -35,7 +35,16 @@ class AuthService {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e) {
-      throw Exception('An unexpected error occurred: $e');
+  Future<User> getUser() async {
+    try {
+      final response = await _apiClient.dio.get('/api/user');
+      if (response.statusCode == 200) {
+        return User.fromJson(response.data);
+      } else {
+        throw Exception('Failed to fetch user');
+      }
+    } catch (e) {
+      throw Exception('Error fetching user: $e');
     }
   }
 }

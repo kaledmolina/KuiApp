@@ -1,8 +1,8 @@
+import '../../../core/widgets/piano_keyboard.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math';
-import '../data/lesson_repository.dart';
 import '../models/lesson_config.dart';
 import '../../auth/models/user_model.dart';
 
@@ -237,34 +237,36 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
              const Text('Listen and identify the note', style: TextStyle(fontSize: 18)),
              const SizedBox(height: 40),
              
-             // Options
-             if (options.isNotEmpty)
-               Wrap(
-                 spacing: 20,
-                 runSpacing: 20,
-                 alignment: WrapAlignment.center,
-                 children: options.map((opt) => SizedBox(
-                   width: 100,
-                   height: 60,
-                   child: ElevatedButton(
-                     style: ElevatedButton.styleFrom(
-                       backgroundColor: isCorrect == true && opt == targetNote 
-                           ? Colors.green 
-                           : (isCorrect == false && opt != targetNote 
-                                ? (opt == selectedOption ? Colors.red : null) // Highlight wrong selection? 
-                                : Colors.white),
-                       foregroundColor: Colors.black,
-                     ),
-                     onPressed: (isCorrect != null || lives <= 0) ? null : () {
-                        // Hack to track selected option for color?
-                        // For simplicity passing opt to checkAnswer
-                        selectedOption = opt;
-                        _checkAnswer(opt);
-                     },
-                     child: Text(opt.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                   ),
-                 )).toList(),
+             // Piano Keyboard
+             Padding(
+               padding: const EdgeInsets.symmetric(horizontal: 16.0),
+               child: PianoKeyboard(
+                 availableNotes: lessonNotes.map((n) => n.fullName).toList(),
+                 correctNote: isCorrect == true ? targetNote?.fullName : null, 
+                 targetNote: isCorrect != null ? targetNote?.fullName : null, // Show target when round done
+                 wrongNote: isCorrect == false ? selectedOption?.fullName : null,
+                 onNoteTap: (note) {
+                    if (isCorrect != null || lives <= 0) return;
+                    
+                    // Find the NoteAudio object for this string
+                    try {
+                      final selected = lessonNotes.firstWhere((n) => n.fullName == note);
+                      selectedOption = selected;
+                      _checkAnswer(selected);
+                    } catch (e) {
+                      // Note not in lesson (e.g. user pressed a key not in the config)
+                      // We can ignore or count as wrong.
+                      // Let's count as wrong but with specific feedback?
+                      // Or just ignore if it's not part of the active notes? 
+                      // If it's a piano, usually all keys work. 
+                      // But we need the audio file to play it? (Optional, user didn't ask to play sound on touch, but good UX)
+                      // If we don't have the audio file downloaded, we can't play it.
+                      // lessonNotes only contains downloaded notes.
+                      debugPrint("Note $note not in lesson config");
+                    }
+                 },
                ),
+             ),
                
              const SizedBox(height: 30),
              

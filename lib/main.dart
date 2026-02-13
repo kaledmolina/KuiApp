@@ -8,6 +8,9 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/ear_training/presentation/ear_training_screen.dart';
 import 'features/ear_training/data/lesson_repository.dart';
 import 'core/api_client.dart';
+import 'features/home/presentation/tabs/levels_tab.dart';
+import 'features/home/presentation/tabs/practice_tab.dart';
+import 'features/home/presentation/tabs/profile_tab.dart';
 
 void main() {
   runApp(
@@ -70,39 +73,47 @@ class MyApp extends StatelessWidget {
 }
 
 // Simple Home Screen for redirection test
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _tabs = const [
+    LevelsTab(),
+    PracticeTab(),
+    ProfileTab(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Welcome! You are logged in.'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                 context.push('/lesson/1');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade100,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-              child: const Text('Start Lesson 1 (Ear Training)', style: TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                 context.read<AuthProvider>().logout();
-                 context.go('/login');
-              },
-              child: const Text('Logout'),
-            )
-          ],
-        ),
+      body: _tabs[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.music_note),
+            label: 'Levels',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.timer),
+            label: 'Practice',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

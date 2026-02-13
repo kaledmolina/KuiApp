@@ -59,7 +59,14 @@ class AuthProvider extends ChangeNotifier {
       _isAuthenticated = true;
       notifyListeners();
       
-      // Optionally fetch user profile here
+      try {
+        _user = await _authService.getUser();
+        notifyListeners();
+      } catch (e) {
+        print('Error fetching user profile: $e');
+        // Maybe force logout if fetching user fails (e.g. token expired)?
+        // For now, keep authenticated but without user data, or handle gracefully.
+      }
     }
   }
 }
