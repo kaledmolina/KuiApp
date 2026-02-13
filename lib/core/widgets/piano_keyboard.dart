@@ -96,9 +96,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
   Widget _buildWhiteKey(String note, double width, double height) {
     bool isPressed = _pressedKey == note;
-    bool isCorrect = note == widget.correctNote;
-    bool isWrong = note == widget.wrongNote;
-    bool isPressed = _pressedKey == note;
     bool isVisible = widget.visibleKeys == null || widget.visibleKeys!.contains(note);
     
     if (!isVisible) {
@@ -164,9 +161,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
   }
 
   Widget _buildBlackKey(String note, double width, double height) {
-    bool isPressed = _pressedKey == note;
-    bool isCorrect = note == widget.correctNote;
-    bool isWrong = note == widget.wrongNote;
     bool isPressed = _pressedKey == note;
     bool isVisible = widget.visibleKeys == null || widget.visibleKeys!.contains(note);
     
