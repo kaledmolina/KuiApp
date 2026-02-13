@@ -7,6 +7,7 @@ import '../../../core/widgets/piano_keyboard.dart';
 import '../../auth/models/user_model.dart';
 import '../data/lesson_repository.dart';
 import '../models/lesson_config.dart';
+import '../data/progress_repository.dart';
 
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
@@ -44,7 +45,12 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
   // Difficulty State
   late AnimationController _timerController;
   int _totalTime = 30;
+  int _totalTime = 30;
   List<String>? _visibleKeys;
+  
+  // Progress State
+  int _questionCount = 0;
+  int _totalQuestions = 10;
 
   @override
   void initState() {
@@ -58,6 +64,21 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
         _handleTimeOut();
       }
     });
+    
+    // Set total questions based on difficulty
+    switch (widget.difficulty) {
+      case 1:
+        _totalQuestions = 10;
+        break;
+      case 2:
+        _totalQuestions = 15;
+        break;
+      case 3:
+        _totalQuestions = 20;
+        break;
+      default:
+        _totalQuestions = 10;
+    }
 
     _loadLesson();
   }
@@ -181,6 +202,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
     setState(() {
       isCorrect = null;
       feedback = '';
+      _questionCount++;
       
       // Pick random target
       targetNote = lessonNotes[_random.nextInt(lessonNotes.length)];
@@ -232,7 +254,13 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
        _timerController.stop(); // Stop timer on answer
        // Auto advance after short delay
        Future.delayed(const Duration(milliseconds: 1500), () {
-         if (mounted) _startNewRound();
+         if (mounted) {
+            if (_questionCount >= _totalQuestions) {
+              _handleLevelComplete();
+            } else {
+              _startNewRound();
+            }
+         }
        });
     } else {
        // Wrong Answer Logic
@@ -267,6 +295,40 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
          });
        }
     }
+  }
+
+  void _handleLevelComplete() async {
+    // Save progress locally
+    final progressRepo = ProgressRepository();
+    await progressRepo.saveLevelComplete(1, widget.difficulty); // Hardcoded level 1 for now
+    
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("¡Nivel Completado!"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+             const Icon(Icons.star, size: 64, color: Colors.amber),
+             const SizedBox(height: 16),
+             Text("Completaste la dificultad ${widget.difficulty == 1 ? 'Fácil' : widget.difficulty == 2 ? 'Medio' : 'Difícil'}."),
+             if (widget.difficulty < 3)
+               const Text("¡Siguiente dificultad desbloqueada!", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              context.go('/home');
+            },
+            child: const Text("Volver a Niveles"),
+          )
+        ],
+      ),
+    );
   }
 
   void _showGameOverDialog() {

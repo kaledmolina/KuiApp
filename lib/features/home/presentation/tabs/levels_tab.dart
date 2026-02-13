@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../ear_training/data/lesson_repository.dart';
 import '../../../ear_training/models/level_model.dart';
+import '../../../ear_training/models/level_model.dart';
+import '../../../ear_training/data/progress_repository.dart';
 import '../../../../core/api_client.dart';
 
 class LevelsTab extends StatefulWidget {
@@ -67,7 +69,13 @@ class _LevelsTabState extends State<LevelsTab> {
       ),
     );
   }
-  void _showDifficultyDialog(BuildContext context, int levelId) {
+  void _showDifficultyDialog(BuildContext context, int levelId) async {
+    // Fetch unlocked difficulty
+    final progressRepo = ProgressRepository();
+    final maxUnlocked = await progressRepo.getMaxUnlockedDifficulty(levelId);
+
+    if (!context.mounted) return;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -84,11 +92,11 @@ class _LevelsTabState extends State<LevelsTab> {
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
-              _buildDifficultyOption(context, levelId, 1, 'Fácil', '30s, 3 Teclas', 1),
+              _buildDifficultyOption(context, levelId, 1, 'Fácil', '10 Preguntas, 30s', 1, maxUnlocked >= 1),
               const SizedBox(height: 12),
-              _buildDifficultyOption(context, levelId, 2, 'Medio', '20s, 5 Teclas', 2),
+              _buildDifficultyOption(context, levelId, 2, 'Medio', '15 Preguntas, 20s', 2, maxUnlocked >= 2),
               const SizedBox(height: 12),
-              _buildDifficultyOption(context, levelId, 3, 'Difícil', '10s, Todas las Teclas', 3),
+              _buildDifficultyOption(context, levelId, 3, 'Difícil', '20 Preguntas, 10s', 3, maxUnlocked >= 3),
               const SizedBox(height: 24),
             ],
           ),
@@ -97,25 +105,26 @@ class _LevelsTabState extends State<LevelsTab> {
     );
   }
 
-  Widget _buildDifficultyOption(BuildContext context, int levelId, int difficulty, String label, String sublabel, int stars) {
+  Widget _buildDifficultyOption(BuildContext context, int levelId, int difficulty, String label, String sublabel, int stars, bool unlocked) {
     return InkWell(
-      onTap: () {
+      onTap: unlocked ? () {
         context.pop(); // Close modal
         context.push('/lesson/$levelId', extra: difficulty);
-      },
+      } : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: unlocked ? Colors.grey.shade300 : Colors.grey.shade200),
           borderRadius: BorderRadius.circular(12),
+          color: unlocked ? null : Colors.grey.shade100,
         ),
         child: Row(
           children: [
              Row(
                children: List.generate(3, (index) => Icon(
                  Icons.star, 
-                 color: index < stars ? Colors.amber : Colors.grey.shade300,
+                 color: unlocked ? (index < stars ? Colors.amber : Colors.grey.shade300) : Colors.grey,
                  size: 20,
                )),
              ),
@@ -124,12 +133,15 @@ class _LevelsTabState extends State<LevelsTab> {
                child: Column(
                  crossAxisAlignment: CrossAxisAlignment.start,
                  children: [
-                   Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                   Text(sublabel, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                   Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: unlocked ? Colors.black : Colors.grey)),
+                   Text(sublabel, style: TextStyle(color: unlocked ? Colors.grey.shade600 : Colors.grey, fontSize: 13)),
                  ],
                ),
              ),
-             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+             if (unlocked)
+               Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400)
+             else
+               const Icon(Icons.lock, size: 20, color: Colors.grey),
           ],
         ),
       ),
