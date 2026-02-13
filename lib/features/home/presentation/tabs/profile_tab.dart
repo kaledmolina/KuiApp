@@ -27,26 +27,29 @@ class ProfileTab extends StatelessWidget {
           },
         )
       ]),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 50,
-              child: Icon(Icons.person, size: 50),
-            ),
-            const SizedBox(height: 16),
-            Text(user.name, style: Theme.of(context).textTheme.headlineSmall),
-            Text(user.email, style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 32),
-            _buildStatCard(context, Icons.favorite, 'Lives', '${user.lives}', Colors.red),
-            const SizedBox(height: 16),
-            _buildStatCard(context, Icons.local_fire_department, 'Streak', '${user.streakCount} days', Colors.orange),
-            const SizedBox(height: 16),
-            _buildStatCard(context, Icons.star, 'XP', '${user.xpTotal}', Colors.amber),
-            const SizedBox(height: 16),
-            _buildStatCard(context, Icons.music_note, 'Gold Notes', '${user.goldNotes}', Colors.yellow.shade800),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                radius: 50,
+                child: Icon(Icons.person, size: 50),
+              ),
+              const SizedBox(height: 16),
+              Text(user.name, style: Theme.of(context).textTheme.headlineSmall),
+              Text(user.email, style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: 32),
+              _buildStatCard(context, Icons.favorite, 'Lives', '${user.lives}', Colors.red),
+              const SizedBox(height: 16),
+              _buildStatCard(context, Icons.local_fire_department, 'Streak', '${user.streakCount} days', Colors.orange),
+              const SizedBox(height: 16),
+              _buildStatCard(context, Icons.star, 'XP', '${user.xpTotal}', Colors.amber),
+              const SizedBox(height: 16),
+              _buildStatCard(context, Icons.music_note, 'Gold Notes', '${user.goldNotes}', Colors.yellow.shade800),
+            ],
+          ),
         ),
       ),
     );
