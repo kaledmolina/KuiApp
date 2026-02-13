@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/presentation/auth_provider.dart';
+import '../../../auth/presentation/auth_provider.dart';
 
 class StreakModal extends StatelessWidget {
   const StreakModal({super.key});
