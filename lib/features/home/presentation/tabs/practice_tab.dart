@@ -204,7 +204,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
         
         // Refresh User Stats
         if (mounted) {
-           context.read<AuthProvider>().checkAuthStatus();
+           context.read<AuthProvider>().checkAuth();
         }
       } catch (e) {
         debugPrint("Error completing practice: $e");
