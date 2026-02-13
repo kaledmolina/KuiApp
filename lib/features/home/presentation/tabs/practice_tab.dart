@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/api_client.dart';
 import '../../../../core/widgets/piano_keyboard.dart';
-import '../../auth/presentation/auth_provider.dart';
-import '../../ear_training/data/lesson_repository.dart';
-import '../../ear_training/models/lesson_config.dart';
+import '../../../auth/presentation/auth_provider.dart';
+import '../../../ear_training/data/lesson_repository.dart';
+import '../../../ear_training/models/lesson_config.dart';
 
 class PracticeTab extends StatefulWidget {
   const PracticeTab({super.key});
