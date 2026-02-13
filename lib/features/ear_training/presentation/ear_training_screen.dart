@@ -74,7 +74,12 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
           isLoading = false;
           lives = user.lives;
         });
-        _startNewRound();
+
+        if (lives <= 0) {
+           _showNoLivesDialog();
+        } else {
+           _startNewRound();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -177,6 +182,25 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
               context.go('/home');
             },
             child: const Text("Back to Home"),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showNoLivesDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("No Lives Left"),
+        content: const Text("You have 0 lives. Go to Practice Mode to earn more!"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              context.go('/home'); // Go to home (Practice tab is there)
+            },
+            child: const Text("Go to Practice"),
           )
         ],
       ),

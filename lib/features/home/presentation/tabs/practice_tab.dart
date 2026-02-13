@@ -1,8 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/api_client.dart';
+import '../../ear_training/data/lesson_repository.dart';
 
-class PracticeTab extends StatelessWidget {
+class PracticeTab extends StatefulWidget {
   const PracticeTab({super.key});
+
+  @override
+  State<PracticeTab> createState() => _PracticeTabState();
+}
+
+class _PracticeTabState extends State<PracticeTab> {
+  bool isPracticing = false;
+
+  Future<void> _doPractice() async {
+    setState(() => isPracticing = true);
+    
+    // Simulate practice delay
+    await Future.delayed(const Duration(seconds: 1));
+
+    try {
+      final repo = LessonRepository(ApiClient());
+      final result = await repo.completePractice();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Practice Complete!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          )
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isPracticing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,19 +67,17 @@ class PracticeTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: () {
-                // For now, launch Level 1 as practice
-                // Ideally, we'd have a specific practice route or passing a flag
-                context.push('/lesson/1');
-              },
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Start Practice Session'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-            ),
+            isPracticing 
+              ? const CircularProgressIndicator()
+              : ElevatedButton.icon(
+                  onPressed: _doPractice,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Complete Practice (Simulate)'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    textStyle: const TextStyle(fontSize: 18),
+                  ),
+                ),
           ],
         ),
       ),

@@ -67,6 +67,19 @@ class LessonRepository {
     }
   }
 
+  Future<Map<String, dynamic>> completePractice() async {
+    try {
+      final response = await _apiClient.dio.post('/api/gamification/practice-complete');
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to complete practice');
+      }
+    } catch (e) {
+      throw Exception('Error completing practice: $e');
+    }
+  }
+
   Future<dynamic> getUser() async {
      try {
        final response = await _apiClient.dio.get('/api/user');
