@@ -11,6 +11,7 @@ import 'core/api_client.dart';
 import 'features/home/presentation/tabs/levels_tab.dart';
 import 'features/home/presentation/tabs/practice_tab.dart';
 import 'features/home/presentation/tabs/profile_tab.dart';
+import 'features/home/presentation/tabs/ranking_tab.dart';
 import 'features/home/presentation/widgets/streak_modal.dart';
 
 void main() {
@@ -125,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _tabs = const [
     LevelsTab(),
     PracticeTab(),
+    RankingTab(),
     ProfileTab(),
   ];
 
@@ -161,6 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.timer),
             label: 'Práctica',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.emoji_events),
+            label: 'Ranking',
           ),
           NavigationDestination(
             icon: Icon(Icons.person),
