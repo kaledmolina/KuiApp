@@ -25,7 +25,7 @@ class _LevelsTabState extends State<LevelsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Plan de Estudios')),
+      // AppBar removed to use main scaffold AppBar
       body: FutureBuilder<List<Level>>(
         future: _levelsFuture,
         builder: (context, snapshot) {

@@ -39,14 +39,7 @@ class _ProfileTabState extends State<ProfileTab> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil'), actions: [
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () {
-            context.read<AuthProvider>().logout();
-          },
-        )
-      ]),
+      // AppBar removed
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

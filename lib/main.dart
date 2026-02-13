@@ -11,6 +11,7 @@ import 'core/api_client.dart';
 import 'features/home/presentation/tabs/levels_tab.dart';
 import 'features/home/presentation/tabs/practice_tab.dart';
 import 'features/home/presentation/tabs/profile_tab.dart';
+import 'features/home/presentation/widgets/streak_modal.dart';
 
 void main() {
   runApp(
@@ -131,6 +132,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _tabs[_currentIndex],
+      appBar: AppBar(
+        title: const Text('Kui'),
+        actions: [
+          _buildStreakBadge(context),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar Sesión',
+            onPressed: () {
+              context.read<AuthProvider>().logout();
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
@@ -152,6 +167,42 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Perfil',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStreakBadge(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    final streak = user?.streakCount ?? 0;
+    
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => const StreakModal(),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.local_fire_department, color: Colors.amber, size: 20),
+            const SizedBox(width: 4),
+            Text(
+              '$streak',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -318,7 +318,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Modo Práctica')),
+      // AppBar removed to use main scaffold AppBar
       body: !isPlaying ? _buildStartScreen() : _buildQuizScreen(),
     );
   }
