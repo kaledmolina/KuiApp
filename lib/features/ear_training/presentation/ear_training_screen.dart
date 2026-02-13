@@ -45,7 +45,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
   // Difficulty State
   late AnimationController _timerController;
   int _totalTime = 30;
-  int _totalTime = 30;
+
   List<String>? _visibleKeys;
   
   // Progress State
