@@ -25,7 +25,7 @@ class _LevelsTabState extends State<LevelsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Curriculum')),
+      appBar: AppBar(title: const Text('Plan de Estudios')),
       body: FutureBuilder<List<Level>>(
         future: _levelsFuture,
         builder: (context, snapshot) {
@@ -34,7 +34,7 @@ class _LevelsTabState extends State<LevelsTab> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No levels found.'));
+            return const Center(child: Text('No se encontraron niveles.'));
           }
 
           final levels = snapshot.data!;
@@ -50,11 +50,11 @@ class _LevelsTabState extends State<LevelsTab> {
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
                   leading: CircleAvatar(
-                    backgroundColor: Colors.blue.shade100,
-                    child: Text('${level.id}', style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold)),
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    child: Text('${level.id}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                   ),
                   title: Text(level.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: Text('Difficulty: ${level.difficulty}'),
+                  subtitle: Text('Dificultad: ${level.difficulty}'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     context.push('/lesson/${level.id}');

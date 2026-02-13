@@ -89,7 +89,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
         if (failedRecs.isNotEmpty) {
            setState(() {
              isLoading = false;
-             error = "Failed to download audio for: ${failedRecs.join(', ')}";
+             error = "Falló la descarga de audio para: ${failedRecs.join(', ')}";
            });
            _showDownloadErrorDialog(failedRecs);
         } else {
@@ -113,17 +113,17 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Audio Files Missing"),
+        title: const Text("Archivos de Audio Faltantes"),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               const Text("The following audio files could not be downloaded:"),
+               const Text("Los siguientes archivos no se pudieron descargar:"),
                const SizedBox(height: 10),
                ...failedNotes.map((n) => Text("• $n", style: const TextStyle(color: Colors.red))),
                const SizedBox(height: 10),
-               const Text("Please check your internet connection and try again."),
+               const Text("Por favor verifica tu conexión a internet e intenta nuevamente."),
             ],
           ),
         ),
@@ -133,7 +133,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
                context.pop();
                context.go('/home');
             },
-            child: const Text("Go Back"),
+            child: const Text("Volver"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -144,7 +144,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
               });
               _loadData(); // Retry
             },
-            child: const Text("Retry Download"),
+            child: const Text("Reintentar"),
           )
         ],
       ),
@@ -221,9 +221,9 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       wrongNotePressed = correct ? null : pressedNote;
       if (correct) {
         score++;
-        feedbackMessage = "Correct!";
+        feedbackMessage = "¡Correcto!";
       } else {
-        feedbackMessage = "Wrong! It was $correctNote";
+        feedbackMessage = "¡Incorrecto! Era $correctNote";
       }
     });
 
@@ -244,12 +244,6 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
     setState(() {
       isPlaying = false;
     });
-
-    // Determine rewards
-    // Simple logic: If score > 5, count as practice complete?
-    // Or always count it? Let's always count it for now to be generous, 
-    // or maybe require at least 50%?
-    // Practice is practice. Let's award it.
 
     bool success = score >= (questionsPerRound / 2); // 50% pass rate?
     
@@ -273,11 +267,11 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: Text(success ? "Practice Complete!" : "Practice Failed"),
+          title: Text(success ? "¡Práctica Completa!" : "Práctica Fallida"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Score: $score / $questionsPerRound"),
+              Text("Puntaje: $score / $questionsPerRound"),
               const SizedBox(height: 10),
               if (result != null) ...[
                  Text(result['message'] ?? '', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -286,7 +280,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
                     const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.favorite, color: Colors.red), Text(" +1")]),
                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.star, color: Colors.amber), Text(" +${result['xp_gained']} XP")]),
               ] else if (!success)
-                 const Text("You need at least 50% correct to earn rewards. Try again!"),
+                 const Text("Necesitas al menos 50% correcto para ganar recompensas. ¡Inténtalo de nuevo!"),
             ],
           ),
           actions: [
@@ -298,14 +292,14 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
                    isPlaying = false;
                 });
               },
-              child: const Text("Close"),
+              child: const Text("Cerrar"),
             ),
             TextButton(
               onPressed: () {
                 context.pop();
                 _startQuiz(); // Retry
               },
-              child: const Text("Play Again"),
+              child: const Text("Jugar de Nuevo"),
             )
           ],
         ),
@@ -324,7 +318,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Practice Mode')),
+      appBar: AppBar(title: const Text('Modo Práctica')),
       body: !isPlaying ? _buildStartScreen() : _buildQuizScreen(),
     );
   }
@@ -334,17 +328,17 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.music_note, size: 80, color: Colors.blue),
+          Icon(Icons.music_note, size: 80, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 20),
           const Text(
-            'Ear Training Practice',
+            'Práctica de Oído',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
            const Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Identify 10 random notes. Get >50% correct to farm lives and XP.',
+                'Identifica 10 notas aleatorias. Obtén >50% correcto para ganar vidas y XP.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
@@ -353,7 +347,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
           ElevatedButton.icon(
             onPressed: _startQuiz,
             icon: const Icon(Icons.play_arrow),
-            label: const Text('Start Practice'),
+            label: const Text('Comenzar Práctica'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               textStyle: const TextStyle(fontSize: 18),
@@ -371,7 +365,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
         LinearProgressIndicator(
           value: _timerController.value,
           backgroundColor: Colors.grey[200],
-          color: Colors.blue, 
+          color: Theme.of(context).colorScheme.primary, 
           minHeight: 6,
         ),
         Padding(
@@ -379,8 +373,8 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Question ${currentIndex + 1} / $questionsPerRound", style: const TextStyle(fontSize: 16)),
-              Text("Score: $score", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text("Pregunta ${currentIndex + 1} / $questionsPerRound", style: const TextStyle(fontSize: 16)),
+              Text("Puntaje: $score", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -394,17 +388,17 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
              width: 120,
              height: 120,
              decoration: BoxDecoration(
-               color: Colors.blue.shade100,
+               color: Theme.of(context).colorScheme.primaryContainer,
                shape: BoxShape.circle,
                boxShadow: [
                  const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
                ]
              ),
-             child: const Icon(Icons.volume_up_rounded, size: 64, color: Colors.blue),
+             child: Icon(Icons.volume_up_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
            ),
          ),
          const SizedBox(height: 20),
-         const Text("Tap to Replay Sound", style: TextStyle(color: Colors.grey)),
+         const Text("Toca para repetir sonido", style: TextStyle(color: Colors.grey)),
          
          const Spacer(),
          

@@ -7,6 +7,7 @@ class User {
   final int streakCount;
   final int xpTotal;
   final int goldNotes;
+  final String? league;
 
   User({
     required this.id,
@@ -16,6 +17,7 @@ class User {
     this.streakCount = 0,
     this.xpTotal = 0,
     this.goldNotes = 0,
+    this.league,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class User {
       streakCount: json['streak_count'] ?? 0,
       xpTotal: json['xp_total'] ?? 0,
       goldNotes: json['gold_notes'] ?? 0,
+      league: json['league'],
     );
   }
 
@@ -39,6 +42,7 @@ class User {
       'streak_count': streakCount,
       'xp_total': xpTotal,
       'gold_notes': goldNotes,
+      'league': league,
     };
   }
 }

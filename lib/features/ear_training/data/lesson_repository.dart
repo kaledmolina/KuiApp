@@ -67,6 +67,22 @@ class LessonRepository {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getRanking({String? league}) async {
+    try {
+      final response = await _apiClient.dio.get('${ApiClient.baseUrl}/api/gamification/ranking', queryParameters: {
+        'league': league
+      });
+
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(response.data);
+      } else {
+        throw Exception('Failed to load ranking');
+      }
+    } catch (e) {
+      throw Exception('Failed to load ranking: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> completePractice() async {
     try {
       final response = await _apiClient.dio.post('/api/gamification/practice-complete');

@@ -79,11 +79,31 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Kui App',
+      title: 'Kui',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6200EE), // Deep Purple
+          brightness: Brightness.light,
+          primary: const Color(0xFF6200EE),
+          secondary: const Color(0xFF03DAC6),
+          tertiary: const Color(0xFFFFD700), // Gold for gamification
+        ),
         fontFamily: 'Poppins',
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          backgroundColor: Color(0xFF6200EE),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
       ),
       routerConfig: _router,
     );
@@ -121,15 +141,15 @@ class _HomeScreenState extends State<HomeScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.music_note),
-            label: 'Levels',
+            label: 'Niveles',
           ),
           NavigationDestination(
             icon: Icon(Icons.timer),
-            label: 'Practice',
+            label: 'Práctica',
           ),
           NavigationDestination(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'Perfil',
           ),
         ],
       ),

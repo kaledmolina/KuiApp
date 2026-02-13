@@ -82,7 +82,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
              // We use 'error' to trigger the error view, but we'll customize it 
              // or we can add a specific state for partial failure.
              // For now, let's use a specific error message format we can parse or just a separate list.
-             error = "Failed to download audio for: ${failedRecs.join(', ')}";
+             error = "Falló la descarga de audio para: ${failedRecs.join(', ')}";
            });
            _showDownloadErrorDialog(failedRecs);
         } else {
@@ -113,17 +113,17 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Create Audio Files Missing"),
+        title: const Text("Archivos de Audio Faltantes"),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               const Text("The following audio files could not be downloaded:"),
+               const Text("Los siguientes archivos de audio no se pudieron descargar:"),
                const SizedBox(height: 10),
                ...failedNotes.map((n) => Text("• $n", style: const TextStyle(color: Colors.red))),
                const SizedBox(height: 10),
-               const Text("Please check your internet connection and try again."),
+               const Text("Por favor verifica tu conexión a internet e intenta nuevamente."),
             ],
           ),
         ),
@@ -133,7 +133,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                context.pop();
                context.go('/home');
             },
-            child: const Text("Go Back"),
+            child: const Text("Volver"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -144,7 +144,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
               });
               _loadLesson(); // Retry
             },
-            child: const Text("Retry Download"),
+            child: const Text("Reintentar Descarga"),
           )
         ],
       ),
@@ -189,7 +189,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
     if (selected == targetNote) {
        setState(() {
          isCorrect = true;
-         feedback = 'Correct! It was ${targetNote!.fullName}';
+         feedback = '¡Correcto! Era ${targetNote!.fullName}';
        });
        // Auto advance after short delay
        Future.delayed(const Duration(milliseconds: 1500), () {
@@ -199,7 +199,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
        // Wrong Answer Logic
        setState(() {
          isCorrect = false;
-         feedback = 'Wrong!';
+         feedback = '¡Incorrecto!';
          lives--; 
        });
        
@@ -234,14 +234,14 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Game Over"),
-        content: const Text("You ran out of lives! Wait for them to regenerate."),
+        title: const Text("Juego Terminado"),
+        content: const Text("¡Te quedaste sin vidas! Espera a que se regeneren."),
         actions: [
           TextButton(
             onPressed: () {
               context.go('/home');
             },
-            child: const Text("Back to Home"),
+            child: const Text("Volver a Inicio"),
           )
         ],
       ),
@@ -253,14 +253,14 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("No Lives Left"),
-        content: const Text("You have 0 lives. Go to Practice Mode to earn more!"),
+        title: const Text("Sin Vidas Restantes"),
+        content: const Text("Tienes 0 vidas. ¡Ve al Modo Práctica para ganar más!"),
         actions: [
           TextButton(
             onPressed: () {
               context.go('/home'); // Go to home (Practice tab is there)
             },
-            child: const Text("Go to Practice"),
+            child: const Text("Ir a Práctica"),
           )
         ],
       ),
@@ -284,7 +284,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ear Training'),
+        title: const Text('Entrenamiento Auditivo'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
