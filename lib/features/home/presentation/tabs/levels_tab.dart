@@ -57,13 +57,81 @@ class _LevelsTabState extends State<LevelsTab> {
                   subtitle: Text('Dificultad: ${level.difficulty}'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    context.push('/lesson/${level.id}');
+                    _showDifficultyDialog(context, level.id);
                   },
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+  void _showDifficultyDialog(BuildContext context, int levelId) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Selecciona la Dificultad',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              _buildDifficultyOption(context, levelId, 1, 'Fácil', '30s, 3 Teclas', 1),
+              const SizedBox(height: 12),
+              _buildDifficultyOption(context, levelId, 2, 'Medio', '20s, 5 Teclas', 2),
+              const SizedBox(height: 12),
+              _buildDifficultyOption(context, levelId, 3, 'Difícil', '10s, Todas las Teclas', 3),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDifficultyOption(BuildContext context, int levelId, int difficulty, String label, String sublabel, int stars) {
+    return InkWell(
+      onTap: () {
+        context.pop(); // Close modal
+        context.push('/lesson/$levelId', extra: difficulty);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+             Row(
+               children: List.generate(3, (index) => Icon(
+                 Icons.star, 
+                 color: index < stars ? Colors.amber : Colors.grey.shade300,
+                 size: 20,
+               )),
+             ),
+             const SizedBox(width: 16),
+             Expanded(
+               child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                   Text(sublabel, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                 ],
+               ),
+             ),
+             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+          ],
+        ),
       ),
     );
   }

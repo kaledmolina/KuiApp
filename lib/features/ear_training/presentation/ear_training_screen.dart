@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,14 @@ import '../models/lesson_config.dart';
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
 
-  const EarTrainingScreen({super.key, required this.repository});
+
+  final int difficulty;
+
+  const EarTrainingScreen({
+    super.key,
+    required this.repository,
+    required this.difficulty,
+  });
 
   @override
   State<EarTrainingScreen> createState() => _EarTrainingScreenState();
@@ -33,6 +41,12 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
   // Gamification State
   int lives = 5;
 
+  // Difficulty State
+  Timer? _timer;
+  int _timeLeft = 0;
+  int _totalTime = 30;
+  List<String>? _visibleKeys;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +55,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -167,8 +182,22 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       
       options = [targetNote!, ...otherNotes.take(2)];
       options.shuffle(_random);
+      
+      // Calculate Visible Keys based on Difficulty
+      if (widget.difficulty == 1) {
+        // Difficulty 1: Target + Options (3 keys)
+        _visibleKeys = options.map((n) => n.fullName).toList();
+      } else if (widget.difficulty == 2) {
+         // Difficulty 2: Target + Options + 2 Distractors (5 keys)
+         final distractors = otherNotes.skip(2).take(2);
+         _visibleKeys = [...options, ...distractors].map((n) => n.fullName).toList();
+      } else {
+        // Difficulty 3: All keys visible
+        _visibleKeys = null;
+      }
     });
     
+    _startTimer();
     _playTargetSound();
   }
 
@@ -191,6 +220,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
          isCorrect = true;
          feedback = '¡Correcto! Era ${targetNote!.fullName}';
        });
+       _timer?.cancel(); // Stop timer on answer
        // Auto advance after short delay
        Future.delayed(const Duration(milliseconds: 1500), () {
          if (mounted) _startNewRound();
@@ -202,6 +232,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
          feedback = '¡Incorrecto!';
          lives--; 
        });
+       _timer?.cancel(); // Stop timer on answer
        
        // Deduct life on server (fire and forget or await?)
        // Better to await to ensure sync, but for UX speed fire and forget is okish if UI updates immediately
@@ -298,9 +329,17 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
           )
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: Column( // changed from Center to Column to put progress bar at top
+        children: [
+          if (_timer != null)
+            LinearProgressIndicator(
+              value: _timeLeft / _totalTime,
+              backgroundColor: Colors.grey.shade300,
+              color: _timeLeft < 5 ? Colors.red : Theme.of(context).primaryColor,
+            ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
           children: [
              // Sound Button
              GestureDetector(
@@ -327,6 +366,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                child: PianoKeyboard(
                  availableNotes: lessonNotes.map((n) => n.fullName).toList(),
+                 visibleKeys: _visibleKeys, // Pass visible keys
                  correctNote: isCorrect == true ? targetNote?.fullName : null, 
                  targetNote: isCorrect != null ? targetNote?.fullName : null, // Show target when round done
                  wrongNote: isCorrect == false ? selectedOption?.fullName : null,
@@ -380,9 +420,64 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
                ),
           ],
         ),
+      ),
+        ],
       )
     );
   }
   
   NoteAudio? selectedOption;
+
+  void _startTimer() {
+    _timer?.cancel();
+    
+    // Set time based on difficulty
+    switch (widget.difficulty) {
+      case 1:
+        _totalTime = 30;
+        break;
+      case 2:
+        _totalTime = 20;
+        break;
+      case 3:
+      default:
+        _totalTime = 10;
+        break;
+    }
+    
+    setState(() {
+      _timeLeft = _totalTime;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft > 0) {
+        setState(() {
+          _timeLeft--;
+        });
+      } else {
+        _timer?.cancel();
+        _handleTimeOut();
+      }
+    });
+  }
+
+  void _handleTimeOut() {
+    if (isCorrect != null) return;
+
+    setState(() {
+      isCorrect = false;
+      feedback = '¡Se acabó el tiempo!';
+      lives--;
+    });
+    
+    widget.repository.deductLife();
+
+    if (lives <= 0) {
+      _showGameOverDialog();
+    } else {
+       Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) _startNewRound();
+       });
+    }
+  }
 }

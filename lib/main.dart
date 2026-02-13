@@ -59,7 +59,8 @@ class _MyAppState extends State<MyApp> {
           builder: (context, state) {
              final apiClient = ApiClient();
              final repository = LessonRepository(apiClient);
-             return EarTrainingScreen(repository: repository);
+             final difficulty = state.extra as int? ?? 1;
+             return EarTrainingScreen(repository: repository, difficulty: difficulty);
           },
         ),
       ],

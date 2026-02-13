@@ -6,6 +6,7 @@ class PianoKeyboard extends StatefulWidget {
   final String? correctNote;
   final String? wrongNote;
   final String? targetNote;
+  final List<String>? visibleKeys;
 
   const PianoKeyboard({
     super.key,
@@ -14,6 +15,7 @@ class PianoKeyboard extends StatefulWidget {
     this.correctNote,
     this.wrongNote,
     this.targetNote,
+    this.visibleKeys,
   });
 
   @override
@@ -96,6 +98,15 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     bool isPressed = _pressedKey == note;
     bool isCorrect = note == widget.correctNote;
     bool isWrong = note == widget.wrongNote;
+    bool isPressed = _pressedKey == note;
+    bool isVisible = widget.visibleKeys == null || widget.visibleKeys!.contains(note);
+    
+    if (!isVisible) {
+      return SizedBox(width: width, height: height);
+    }
+
+    bool isCorrect = note == widget.correctNote;
+    bool isWrong = note == widget.wrongNote;
     bool isTarget = note == widget.targetNote;
 
     // Base Color
@@ -154,6 +165,21 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
   Widget _buildBlackKey(String note, double width, double height) {
     bool isPressed = _pressedKey == note;
+    bool isCorrect = note == widget.correctNote;
+    bool isWrong = note == widget.wrongNote;
+    bool isPressed = _pressedKey == note;
+    bool isVisible = widget.visibleKeys == null || widget.visibleKeys!.contains(note);
+    
+    if (!isVisible) {
+       // Maintain spacing but don't draw interactions
+       // Actually for black keys, if it's not visible, we might just want to return an empty sized box 
+       // but strictly speaking the 'row' layout expects a specific width?
+       // The parent 'Stack' -> 'Row' structure for black keys uses specific spacing.
+       // _buildBlackKey is called inside a Row with a SizedBox spacer. 
+       // If we return a SizedBox(width: width), it maintains the layout.
+       return SizedBox(width: width, height: height);
+    }
+
     bool isCorrect = note == widget.correctNote;
     bool isWrong = note == widget.wrongNote;
     bool isTarget = note == widget.targetNote;
