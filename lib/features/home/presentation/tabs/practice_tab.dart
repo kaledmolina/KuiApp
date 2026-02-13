@@ -75,14 +75,28 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       allNotes = await repo.getNoteAudioList(4);
       
       // Pre-download audio
+      List<String> failedRecs = [];
       for (var note in allNotes) {
-        await repo.downloadAudio(note.filePath, '${note.fullName}.webm');
+        try {
+          await repo.downloadAudio(note.filePath, '${note.fullName}.webm');
+        } catch (e) {
+          debugPrint("Failed to download ${note.fullName}: $e");
+          failedRecs.add(note.fullName);
+        }
       }
 
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        if (failedRecs.isNotEmpty) {
+           setState(() {
+             isLoading = false;
+             error = "Failed to download audio for: ${failedRecs.join(', ')}";
+           });
+           _showDownloadErrorDialog(failedRecs);
+        } else {
+           setState(() {
+            isLoading = false;
+           });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -93,6 +107,48 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       }
     }
   }
+
+  void _showDownloadErrorDialog(List<String> failedNotes) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Audio Files Missing"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               const Text("The following audio files could not be downloaded:"),
+               const SizedBox(height: 10),
+               ...failedNotes.map((n) => Text("• $n", style: const TextStyle(color: Colors.red))),
+               const SizedBox(height: 10),
+               const Text("Please check your internet connection and try again."),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+               context.pop();
+               context.go('/home');
+            },
+            child: const Text("Go Back"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.pop();
+              setState(() {
+                isLoading = true;
+                error = null;
+              });
+              _loadData(); // Retry
+            },
+            child: const Text("Retry Download"),
+          )
+        ],
+      ),
+    );
 
   void _startQuiz() {
     if (allNotes.isEmpty) return;

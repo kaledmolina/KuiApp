@@ -107,7 +107,13 @@ class LessonRepository {
          }
       }
 
-      await _apiClient.dio.download(downloadUrl, file.path);
+      // API headers (e.g. Accept: application/json) on static assets.
+      final dio = Dio(); 
+      await dio.download(downloadUrl, file.path);
+      return file.path; 
+      // API headers (e.g. Accept: application/json) on static assets.
+      final dio = Dio(); 
+      await dio.download(downloadUrl, file.path);
       return file.path;
     } catch (e) {
       throw Exception('Error downloading audio: $e');

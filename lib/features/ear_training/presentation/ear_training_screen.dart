@@ -65,20 +65,37 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       }
 
       // 4. Pre-download Audio Files
+      List<String> failedRecs = [];
       for (var note in lessonNotes) {
-        await widget.repository.downloadAudio(note.filePath, '${note.fullName}.webm');
+        try {
+          await widget.repository.downloadAudio(note.filePath, '${note.fullName}.webm');
+        } catch (e) {
+          debugPrint("Failed to download ${note.fullName}: $e");
+          failedRecs.add(note.fullName);
+        }
       }
       
       if (mounted) {
-        setState(() {
-          isLoading = false;
-          lives = user.lives;
-        });
-
-        if (lives <= 0) {
-           _showNoLivesDialog();
+        if (failedRecs.isNotEmpty) {
+           setState(() {
+             isLoading = false;
+             // We use 'error' to trigger the error view, but we'll customize it 
+             // or we can add a specific state for partial failure.
+             // For now, let's use a specific error message format we can parse or just a separate list.
+             error = "Failed to download audio for: ${failedRecs.join(', ')}";
+           });
+           _showDownloadErrorDialog(failedRecs);
         } else {
-           _startNewRound();
+          setState(() {
+            isLoading = false;
+            lives = user.lives;
+          });
+
+          if (lives <= 0) {
+             _showNoLivesDialog();
+          } else {
+             _startNewRound();
+          }
         }
       }
     } catch (e) {
@@ -90,6 +107,48 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       }
     }
   }
+
+  void _showDownloadErrorDialog(List<String> failedNotes) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Create Audio Files Missing"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               const Text("The following audio files could not be downloaded:"),
+               const SizedBox(height: 10),
+               ...failedNotes.map((n) => Text("• $n", style: const TextStyle(color: Colors.red))),
+               const SizedBox(height: 10),
+               const Text("Please check your internet connection and try again."),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+               context.pop();
+               context.go('/home');
+            },
+            child: const Text("Go Back"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.pop();
+              setState(() {
+                isLoading = true;
+                error = null;
+              });
+              _loadLesson(); // Retry
+            },
+            child: const Text("Retry Download"),
+          )
+        ],
+      ),
+    );
 
   void _startNewRound() {
     if (lessonNotes.isEmpty) return;
