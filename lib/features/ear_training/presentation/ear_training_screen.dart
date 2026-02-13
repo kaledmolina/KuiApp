@@ -1,11 +1,11 @@
-import '../../../core/widgets/piano_keyboard.dart';
+import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math';
-import '../models/lesson_config.dart';
+import '../../../core/widgets/piano_keyboard.dart';
 import '../../auth/models/user_model.dart';
 import '../data/lesson_repository.dart';
+import '../models/lesson_config.dart';
 
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
