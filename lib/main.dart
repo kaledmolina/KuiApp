@@ -23,40 +23,58 @@ void main() {
   );
 }
 
-// Router configuration
-final _router = GoRouter(
-  initialLocation: '/login',
-  routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/lesson/:id',
-      builder: (context, state) {
-         // Simple DI for now
-         final apiClient = ApiClient();
-         final repository = LessonRepository(apiClient);
-         return EarTrainingScreen(repository: repository);
-      },
-    ),
-  ],
-  redirect: (context, state) {
-    // Simple redirect logic
-    // final authProvider = context.read<AuthProvider>();
-    // if (!authProvider.isAuthenticated && state.matchedLocation != '/login') {
-    //   return '/login';
-    // }
-    return null; 
-  },
-);
-
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    // We need to access the AuthProvider to set up the router's refreshListenable
+    // Since we are in initState, we can access the provider context.
+    final authProvider = context.read<AuthProvider>();
+
+    _router = GoRouter(
+      refreshListenable: authProvider,
+      initialLocation: '/home', // Optimistic, let redirect handle logic
+      routes: [
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/lesson/:id',
+          builder: (context, state) {
+             final apiClient = ApiClient();
+             final repository = LessonRepository(apiClient);
+             return EarTrainingScreen(repository: repository);
+          },
+        ),
+      ],
+      redirect: (context, state) {
+        final isLoggedIn = authProvider.isAuthenticated;
+        final isLoggingIn = state.matchedLocation == '/login';
+        
+        // If not logged in and not on login page, go to login
+        if (!isLoggedIn && !isLoggingIn) return '/login';
+        
+        // If logged in and on login page, go to home
+        if (isLoggedIn && isLoggingIn) return '/home';
+        
+        return null; 
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
