@@ -69,7 +69,7 @@ class LessonRepository {
 
   Future<List<Map<String, dynamic>>> getRanking({String? league}) async {
     try {
-      final response = await _apiClient.dio.get('${ApiClient.baseUrl}/api/gamification/ranking', queryParameters: {
+      final response = await _apiClient.dio.get('${ApiClient.baseUrl}/api/rankings', queryParameters: {
         'league': league
       });
 
