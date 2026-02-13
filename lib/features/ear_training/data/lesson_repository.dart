@@ -106,6 +106,11 @@ class LessonRepository {
              downloadUrl = '${ApiClient.baseUrl}/$url';
          }
       }
+      
+      // Ensure special characters like '#' are properly encoded
+      // Note: Full URL encoding might double encode, so handle carefully.
+      // Usually, just replacing # fixes the most common issue with sharps.
+      downloadUrl = downloadUrl.replaceAll('#', '%23');
 
       // API headers (e.g. Accept: application/json) on static assets.
       final dio = Dio(); 
