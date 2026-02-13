@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/presentation/auth_provider.dart';
+import '../../../auth/presentation/auth_provider.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
