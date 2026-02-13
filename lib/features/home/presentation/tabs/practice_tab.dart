@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api_client.dart';
-import '../../ear_training/data/lesson_repository.dart';
+import '../../../ear_training/data/lesson_repository.dart';
 
 class PracticeTab extends StatefulWidget {
   const PracticeTab({super.key});
