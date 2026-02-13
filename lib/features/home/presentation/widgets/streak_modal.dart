@@ -145,12 +145,28 @@ class StreakModal extends StatelessWidget {
   }
 
   Widget _buildDayCircle(String day, int streak) {
-    // Visual logic: active if it's one of the streak days. 
-    // For this UI mock, let's just create a nice looking "active" state for a few days.
-    bool isActive = ['Vie', 'Sáb', 'Dom'].contains(day) && streak > 0;
+    // Logic to determine if a day should be highlighted based on the current weekday and streak.
     
-    // Future improvement: Pass actual history from backend
+    // 1. Map day string to weekday index (1 = Mon, 7 = Sun)
+    final Map<String, int> dayToIndex = {
+      'Lun': 1, 'Mar': 2, 'Mié': 3, 'Jue': 4, 'Vie': 5, 'Sáb': 6, 'Dom': 7
+    };
     
+    int dayIndex = dayToIndex[day]!;
+    int todayIndex = DateTime.now().weekday; // 1 = Mon, ..., 7 = Sun
+    
+    // 2. Check conditions:
+    // - The day must be today or before today (in the current week view).
+    // - The day must be within the streak range counting backwards from today.
+    //   e.g. Today=Fri(5), Streak=2. Active days: Fri(5), Thu(4).
+    //   Indices: 5, 4. 
+    //   Condition: (todayIndex - dayIndex) < streak
+    
+    bool isPastOrToday = dayIndex <= todayIndex;
+    bool isWithinStreak = (todayIndex - dayIndex) < streak;
+    
+    bool isActive = isPastOrToday && isWithinStreak;
+
     return Container(
       width: 32,
       height: 32,
