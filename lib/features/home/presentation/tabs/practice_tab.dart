@@ -149,6 +149,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
         ],
       ),
     );
+  }
 
   void _startQuiz() {
     if (allNotes.isEmpty) return;
