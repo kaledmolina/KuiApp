@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:math';
 import '../models/lesson_config.dart';
 import '../../auth/models/user_model.dart';
+import '../data/lesson_repository.dart';
 
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
