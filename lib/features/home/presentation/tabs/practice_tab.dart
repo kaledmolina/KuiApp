@@ -361,42 +361,102 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
   Widget _buildQuizScreen() {
     return Column(
       children: [
-        // Top Bar: Timer & Score
-        LinearProgressIndicator(
-          value: _timerController.value,
-          backgroundColor: Colors.grey[200],
-          color: Theme.of(context).colorScheme.primary, 
-          minHeight: 6,
-        ),
+        // Top Bar: Lesson Progress
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Column(
             children: [
-              Text("Pregunta ${currentIndex + 1} / $questionsPerRound", style: const TextStyle(fontSize: 16)),
-              Text("Puntaje: $score", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Pregunta ${currentIndex + 1} / $questionsPerRound", 
+                    style: TextStyle(
+                      fontSize: 14, 
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600]
+                    )
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text(
+                          "$score", 
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.amber.shade900
+                          )
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Custom Progress Bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  height: 12, // Thicker
+                  child: LinearProgressIndicator(
+                    value: (currentIndex + 1) / questionsPerRound,
+                    backgroundColor: Colors.grey[200],
+                    color: Colors.green.shade400, // Duolingo Green
+                    minHeight: 12,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         
         const Spacer(),
         
-        // Listen Button
-        GestureDetector(
-           onTap: () => _playQuestion(), // Replay
-           child: Container(
-             width: 120,
-             height: 120,
-             decoration: BoxDecoration(
-               color: Theme.of(context).colorScheme.primaryContainer,
-               shape: BoxShape.circle,
-               boxShadow: [
-                 const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
-               ]
+        // Listen Button with Circular Timer
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            // Timer Ring
+            SizedBox(
+              width: 140,
+              height: 140,
+              child: AnimatedBuilder(
+                animation: _timerController,
+                builder: (context, child) {
+                  return CircularProgressIndicator(
+                    value: 1.0 - _timerController.value, // Countdown visual
+                    strokeWidth: 8,
+                    backgroundColor: Colors.grey.shade200,
+                    color: _timerController.value > 0.7 ? Colors.red : Theme.of(context).colorScheme.primary,
+                  );
+                },
+              ),
+            ),
+            // Button
+            GestureDetector(
+               onTap: () => _playQuestion(), // Replay
+               child: Container(
+                 width: 120,
+                 height: 120,
+                 decoration: BoxDecoration(
+                   color: Theme.of(context).colorScheme.primaryContainer,
+                   shape: BoxShape.circle,
+                   boxShadow: [
+                     const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+                   ]
+                 ),
+                 child: Icon(Icons.volume_up_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
+               ),
              ),
-             child: Icon(Icons.volume_up_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
-           ),
-         ),
+          ],
+        ),
          const SizedBox(height: 20),
          const Text("Toca para repetir sonido", style: TextStyle(color: Colors.grey)),
          
@@ -404,14 +464,24 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
          
          // Feedback
          if (feedbackMessage != null)
-           Padding(
-             padding: const EdgeInsets.all(8.0),
+           Container(
+             margin: const EdgeInsets.symmetric(horizontal: 20),
+             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+             decoration: BoxDecoration(
+               color: isLastCorrect == true ? Colors.green.shade100 : Colors.red.shade100,
+               borderRadius: BorderRadius.circular(16),
+               border: Border.all(
+                 color: isLastCorrect == true ? Colors.green : Colors.red,
+                 width: 2
+               )
+             ),
              child: Text(
                feedbackMessage!,
+               textAlign: TextAlign.center,
                style: TextStyle(
-                 fontSize: 20, 
+                 fontSize: 18, 
                  fontWeight: FontWeight.bold,
-                 color: isLastCorrect == true ? Colors.green : Colors.red
+                 color: isLastCorrect == true ? Colors.green.shade800 : Colors.red.shade800
                ),
              ),
            ),

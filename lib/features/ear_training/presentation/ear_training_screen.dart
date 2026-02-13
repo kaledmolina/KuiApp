@@ -356,11 +356,28 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
              const SizedBox(height: 30),
              
              // Feedback
-             Text(feedback, style: TextStyle(
-               color: isCorrect == true ? Colors.green : Colors.red,
-               fontSize: 20,
-               fontWeight: FontWeight.bold
-             )),
+             if (feedback.isNotEmpty)
+               Container(
+                 margin: const EdgeInsets.symmetric(horizontal: 20),
+                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                 decoration: BoxDecoration(
+                   color: isCorrect == true ? Colors.green.shade100 : Colors.red.shade100,
+                   borderRadius: BorderRadius.circular(16),
+                   border: Border.all(
+                     color: isCorrect == true ? Colors.green : Colors.red,
+                     width: 2
+                   )
+                 ),
+                 child: Text(
+                   feedback, 
+                   textAlign: TextAlign.center,
+                   style: TextStyle(
+                     fontSize: 18, 
+                     fontWeight: FontWeight.bold,
+                     color: isCorrect == true ? Colors.green.shade800 : Colors.red.shade800
+                   ),
+                 ),
+               ),
           ],
         ),
       )
