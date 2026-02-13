@@ -24,7 +24,7 @@ class EarTrainingScreen extends StatefulWidget {
   State<EarTrainingScreen> createState() => _EarTrainingScreenState();
 }
 
-class _EarTrainingScreenState extends State<EarTrainingScreen> {
+class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProviderStateMixin {
   bool isLoading = true;
   String? error;
   List<NoteAudio> lessonNotes = [];
@@ -42,20 +42,29 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
   int lives = 5;
 
   // Difficulty State
-  Timer? _timer;
-  int _timeLeft = 0;
+  late AnimationController _timerController;
   int _totalTime = 30;
   List<String>? _visibleKeys;
 
   @override
   void initState() {
     super.initState();
+    _timerController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: _totalTime),
+    );
+    _timerController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _handleTimeOut();
+      }
+    });
+
     _loadLesson();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -220,7 +229,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
          isCorrect = true;
          feedback = '¡Correcto! Era ${targetNote!.fullName}';
        });
-       _timer?.cancel(); // Stop timer on answer
+       _timerController.stop(); // Stop timer on answer
        // Auto advance after short delay
        Future.delayed(const Duration(milliseconds: 1500), () {
          if (mounted) _startNewRound();
@@ -232,7 +241,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
          feedback = '¡Incorrecto!';
          lives--; 
        });
-       _timer?.cancel(); // Stop timer on answer
+       _timerController.stop(); // Stop timer on answer
        
        // Deduct life on server (fire and forget or await?)
        // Better to await to ensure sync, but for UX speed fire and forget is okish if UI updates immediately
@@ -331,33 +340,49 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
       ),
       body: Column( // changed from Center to Column to put progress bar at top
         children: [
-          if (_timer != null)
-            LinearProgressIndicator(
-              value: _timeLeft / _totalTime,
-              backgroundColor: Colors.grey.shade300,
-              color: _timeLeft < 5 ? Colors.red : Theme.of(context).primaryColor,
-            ),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-             // Sound Button
-             GestureDetector(
-               onTap: _playTargetSound,
-               child: Container(
-                 width: 120,
-                 height: 120,
-                 decoration: BoxDecoration(
-                   color: Colors.blue.shade100,
-                   shape: BoxShape.circle,
-                   boxShadow: [
-                     const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
-                   ]
+              children: [
+                 // Sound Button with Circular Timer
+                 Stack(
+                   alignment: Alignment.center,
+                   children: [
+                     // Timer Ring
+                     SizedBox(
+                       width: 140,
+                       height: 140,
+                       child: AnimatedBuilder(
+                         animation: _timerController,
+                         builder: (context, child) {
+                           return CircularProgressIndicator(
+                             value: 1.0 - _timerController.value, // Countdown visual
+                             strokeWidth: 8,
+                             backgroundColor: Colors.grey.shade200,
+                             color: _timerController.value > 0.7 ? Colors.red : Theme.of(context).primaryColor,
+                           );
+                         },
+                       ),
+                     ),
+                     // Button
+                     GestureDetector(
+                       onTap: _playTargetSound,
+                       child: Container(
+                         width: 120,
+                         height: 120,
+                         decoration: BoxDecoration(
+                           color: Colors.blue.shade100,
+                           shape: BoxShape.circle,
+                           boxShadow: [
+                             const BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+                           ]
+                         ),
+                         child: const Icon(Icons.volume_up_rounded, size: 64, color: Colors.blue),
+                       ),
+                     ),
+                   ],
                  ),
-                 child: const Icon(Icons.volume_up_rounded, size: 64, color: Colors.blue),
-               ),
-             ),
-             const SizedBox(height: 20),
+                 const SizedBox(height: 20),
              const Text('Listen and identify the note', style: TextStyle(fontSize: 18)),
              const SizedBox(height: 40),
              
@@ -429,8 +454,6 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
   NoteAudio? selectedOption;
 
   void _startTimer() {
-    _timer?.cancel();
-    
     // Set time based on difficulty
     switch (widget.difficulty) {
       case 1:
@@ -445,20 +468,9 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> {
         break;
     }
     
-    setState(() {
-      _timeLeft = _totalTime;
-    });
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_timeLeft > 0) {
-        setState(() {
-          _timeLeft--;
-        });
-      } else {
-        _timer?.cancel();
-        _handleTimeOut();
-      }
-    });
+    _timerController.duration = Duration(seconds: _totalTime);
+    _timerController.reset();
+    _timerController.forward();
   }
 
   void _handleTimeOut() {

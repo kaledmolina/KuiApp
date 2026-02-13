@@ -359,8 +359,12 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
   }
 
   Widget _buildQuizScreen() {
-    return Column(
-      children: [
+    return CustomScrollView(
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+          children: [
         // Top Bar: Lesson Progress
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -505,6 +509,9 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
              ),
            ),
          ),
+      ],
+    ),
+        ),
       ],
     );
   }
