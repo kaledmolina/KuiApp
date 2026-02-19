@@ -324,7 +324,8 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
         actions: [
           TextButton(
             onPressed: () {
-              context.go('/home');
+              context.pop(); // close dialog
+              context.pop(); // close screen
             },
             child: const Text("Volver a Niveles"),
           )
@@ -343,7 +344,8 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
         actions: [
           TextButton(
             onPressed: () {
-              context.go('/home');
+              context.pop(); // close dialog
+              context.pop(); // close screen
             },
             child: const Text("Volver a Inicio"),
           )
