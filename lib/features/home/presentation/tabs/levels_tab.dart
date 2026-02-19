@@ -270,16 +270,15 @@ class _UnitSection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Column(
           children: [
-            // Header
             _UnitHeader(unit: unit),
-            
-            // Levels List (if unlocked)
             if (!unit.isLocked) ...[
               const SizedBox(height: 16),
               ...unit.levels.map((levelWP) => Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: _LevelCard(levelWP: levelWP, onTap: () => onLevelTap(levelWP)),
               )),
+              // Reward Chest (Visual Mock per HTML design)
+              const _RewardCard(),
             ],
           ],
         ),
@@ -288,6 +287,63 @@ class _UnitSection extends StatelessWidget {
   }
 }
 
+class _RewardCard extends StatelessWidget {
+  const _RewardCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFD600).withOpacity(0.1), // bg-accent/10
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFFFD600), width: 2), // border-accent
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1), // shadow-solid
+            offset: const Offset(0, 4),
+            blurRadius: 0,
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFD600), // bg-accent
+              shape: BoxShape.circle,
+              boxShadow: [
+                 BoxShadow(
+                    color: Color(0xFFFFD600), // shadow-solid (accent) - HTML has shadow-solid but on text-yellow-900 icon
+                    // Actually HTML: shadow-solid text-yellow-900.
+                    // Wait, HTML: shadow-solid on the circle? Yes.
+                    offset: Offset(0, 4),
+                    blurRadius: 0
+                 )
+              ]
+            ),
+            child: const Center(
+              child: Icon(Icons.inventory_2_outlined, color: Color(0xFF713F12), size: 24), // text-yellow-900
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'Cofre de Recompensas',
+              style: GoogleFonts.nunito(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: const Color(0xFF713F12), // text-yellow-900
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _UnitHeader extends StatelessWidget {
   final Unit unit;
@@ -301,7 +357,7 @@ class _UnitHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: unit.isLocked ? Colors.grey[200] : unit.color,
-        borderRadius: BorderRadius.circular(24), // rounded-2xl
+        borderRadius: BorderRadius.circular(24),
         boxShadow: unit.isLocked ? [] : [
           const BoxShadow(
             color: Color(0xFF3700B3), // solid-primary
@@ -314,7 +370,6 @@ class _UnitHeader extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-           // Decoration
            if (!unit.isLocked)
             Positioned(
               bottom: -20,
@@ -386,13 +441,13 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final level = levelWP.level;
+    final int stars = levelWP.stars;
+    
     // Logic:
     // Completed (3 stars) -> Green Styling (HTML Level 1)
     // Active (< 3 stars) -> Purple Styling (HTML Level 2)
-    // Locked -> Gray Styling (HTML Level 3) - For now assuming all fetched are unlocked in unit context
-    
-    final level = levelWP.level;
-    final int stars = levelWP.stars;
+    // Locked -> Gray Styling (HTML Level 3)
     
     final bool isCompleted = stars == 3;
     final bool isActive = !isCompleted; 
@@ -401,10 +456,17 @@ class _LevelCard extends StatelessWidget {
     // HTML Styles Mapped
     // Active: border-primary (6200EA), shadow-solid-primary (3700B3)
     // Completed: border-secondary (00E676), shadow-solid-secondary (00A854)
-    // Locked: bg-gray-100, border-gray-200, opacity-70
     
     final Color borderColor = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
-    final Color? shadowColor = isLocked ? null : (isActive ? const Color(0xFF3700B3) : const Color(0xFF00A854));
+    
+    // Card Shadow is strictly 'shadow-solid' (black/10, 0 4px) for Cards.
+    // Except HTML 'active' button has shadow-solid.
+    // HTML 'completed' button also has shadow-solid.
+    // The *Icon Circle* has the colored shadow.
+    
+    final Color cardShadowColor = Colors.black.withOpacity(0.1);
+    final Color? iconShadowColor = isLocked ? null : (isActive ? const Color(0xFF3700B3) : const Color(0xFF00A854));
+    
     final Color bgColor = isLocked ? const Color(0xFFF3F4F6) : Colors.white;
     final Color iconBg = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
     final Color iconColor = isLocked ? Colors.grey : Colors.white;
@@ -419,13 +481,13 @@ class _LevelCard extends StatelessWidget {
             color: bgColor,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 2),
-            boxShadow: shadowColor != null ? [
+            boxShadow: [
                BoxShadow(
-                  color: shadowColor,
-                  offset: const Offset(0, 6), // solid-primary/secondary
+                  color: cardShadowColor, // shadow-solid
+                  offset: const Offset(0, 4), 
                   blurRadius: 0
                )
-            ] : [],
+            ]
           ),
           padding: const EdgeInsets.all(16),
           child: Stack(
@@ -440,10 +502,10 @@ class _LevelCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: iconBg,
                       shape: BoxShape.circle,
-                      boxShadow: shadowColor != null ? [
+                      boxShadow: iconShadowColor != null ? [
                          BoxShadow(
-                            color: shadowColor,
-                            offset: const Offset(0, 2), // slightly smaller for icon
+                            color: iconShadowColor, // shadow-solid-primary/secondary
+                            offset: const Offset(0, 6), 
                             blurRadius: 0
                          )
                       ] : []
@@ -477,7 +539,7 @@ class _LevelCard extends StatelessWidget {
                               )
                            )
                         else
-                           // Show "¡En curso!" text like HTML Level 2 if new/active
+                           // Show "¡En curso!" text like HTML
                            Padding(
                              padding: const EdgeInsets.only(top: 2.0),
                              child: Text(
@@ -487,7 +549,6 @@ class _LevelCard extends StatelessWidget {
                                  fontWeight: FontWeight.bold,
                                  color: const Color(0xFF6200EA), 
                                  letterSpacing: -0.5,
-                                 textBaseline: TextBaseline.alphabetic
                                ),
                              ),
                            )
@@ -497,15 +558,15 @@ class _LevelCard extends StatelessWidget {
                 ],
               ),
               
-              // "PRÓXIMO" Tag (Absolute Position like HTML)
+              // "PRÓXIMO" Tag
               if (isActive)
                  Positioned(
-                    top: -24, // -top-2 in HTML relative to button padding? No, here relative to Stack
+                    top: -24, 
                     right: -8,
                     child: Container(
                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                        decoration: BoxDecoration(
-                          color: const Color(0xFFB388FF), // primary-light
+                          color: const Color(0xFFB388FF), 
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white, width: 2)
                        ),
@@ -514,7 +575,7 @@ class _LevelCard extends StatelessWidget {
                           style: GoogleFonts.nunito(
                              fontSize: 10,
                              fontWeight: FontWeight.w900,
-                             color: const Color(0xFF3700B3) // primary-dark
+                             color: const Color(0xFF3700B3) 
                           ),
                        ),
                     ),
