@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../ear_training/data/lesson_repository.dart';
 import '../../../ear_training/models/level_model.dart';
+import '../../../ear_training/data/progress_repository.dart';
 import '../../../../core/api_client.dart';
 
 // --- Models for UI ---
@@ -14,7 +15,7 @@ class Unit {
   final String subtitle;
   final Color color;
   final bool isLocked;
-  final List<LevelUI> levels;
+  final List<Level> levels;
 
   Unit({
     required this.number,
@@ -23,22 +24,6 @@ class Unit {
     required this.color,
     this.isLocked = false,
     required this.levels,
-  });
-}
-
-class LevelUI {
-  final String title;
-  final String? subtitle;
-  final LevelStatus status;
-  final int stars;
-  final int? levelId; // Link to actual level ID if available
-
-  LevelUI({
-    required this.title,
-    this.subtitle,
-    this.status = LevelStatus.locked,
-    this.stars = 0,
-    this.levelId,
   });
 }
 
@@ -52,50 +37,14 @@ class LevelsTab extends StatefulWidget {
 }
 
 class _LevelsTabState extends State<LevelsTab> {
-  // Mock Data mimicking the design
-  final List<Unit> _units = [
-    Unit(
-      number: 1,
-      title: 'Introducción al Oído',
-      subtitle: 'Unidad 1',
-      color: const Color(0xFF6200EA), // Primary
-      levels: [
-        LevelUI(
-          title: 'Nivel 1: Teclas Blancas',
-          status: LevelStatus.completed,
-          stars: 3,
-          levelId: 1,
-        ),
-        LevelUI(
-          title: 'Nivel 2: Intervalos Básicos',
-          subtitle: '¡En curso!',
-          status: LevelStatus.active,
-          levelId: 2,
-        ),
-        LevelUI(
-          title: 'Nivel 3: El Pentagrama',
-          status: LevelStatus.locked,
-          levelId: 3,
-        ),
-      ],
-    ),
-    Unit(
-      number: 2,
-      title: 'Armonía y Acordes',
-      subtitle: 'Unidad 2',
-      color: Colors.grey,
-      isLocked: true,
-      levels: [],
-    ),
-    Unit(
-      number: 3,
-      title: 'Lectura Avanzada',
-      subtitle: 'Unidad 3',
-      color: Colors.grey,
-      isLocked: true,
-      levels: [],
-    ),
-  ];
+  late Future<List<Level>> _levelsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final repository = LessonRepository(ApiClient());
+    _levelsFuture = repository.getLevels();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,69 +55,155 @@ class _LevelsTabState extends State<LevelsTab> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(context),
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 100), // Space for bottom nav
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final unit = _units[index];
-                  return _UnitSection(unit: unit);
-                },
-                childCount: _units.length,
+      body: FutureBuilder<List<Level>>(
+        future: _levelsFuture,
+        builder: (context, snapshot) {
+           if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No se encontraron niveles.'));
+          }
+
+          final levels = snapshot.data!;
+          // Group levels into Units (e.g., 5 levels per unit)
+          final units = _groupLevelsIntoUnits(levels);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 100),
+            child: Column(
+              children: units.map((unit) => _UnitSection(
+                unit: unit,
+                onLevelTap: (level) => _showDifficultyDialog(context, level.id),
+              )).toList(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  List<Unit> _groupLevelsIntoUnits(List<Level> levels) {
+    final List<Unit> units = [];
+    int chunkSize = 5;
+    
+    // Define Unit Themes
+    final themes = [
+      {'title': 'Introducción al Oído', 'color': const Color(0xFF6200EA)},
+      {'title': 'Armonía y Acordes', 'color': const Color(0xFF00E676)}, // Greenish for variety
+      {'title': 'Lectura Avanzada', 'color': const Color(0xFFFFD600)}, // Amber
+    ];
+
+    for (var i = 0; i < levels.length; i += chunkSize) {
+      final chunk = levels.skip(i).take(chunkSize).toList();
+      final unitIndex = i ~/ chunkSize;
+      final theme = themes[unitIndex % themes.length];
+      
+      units.add(Unit(
+        number: unitIndex + 1,
+        title: theme['title'] as String,
+        subtitle: 'Unidad ${unitIndex + 1}',
+        color: theme['color'] as Color,
+        levels: chunk,
+        isLocked: false, // For now, assuming units are unlocked or logic is handled elsewhere
+      ));
+    }
+    return units;
+  }
+
+  void _showDifficultyDialog(BuildContext context, int levelId) async {
+    // Fetch unlocked difficulty
+    final progressRepo = ProgressRepository();
+    final maxUnlocked = await progressRepo.getMaxUnlockedDifficulty(levelId);
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
+              Text(
+                'Selecciona la Dificultad',
+                style: GoogleFonts.nunito(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildDifficultyOption(context, levelId, 1, 'Fácil', '10 Preguntas, 30s', 1, maxUnlocked >= 1, Colors.green),
+              const SizedBox(height: 12),
+              _buildDifficultyOption(context, levelId, 2, 'Medio', '15 Preguntas, 20s', 2, maxUnlocked >= 2, Colors.orange),
+              const SizedBox(height: 12),
+              _buildDifficultyOption(context, levelId, 3, 'Difícil', '20 Preguntas, 10s', 3, maxUnlocked >= 3, Colors.red),
+              const SizedBox(height: 24),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  SliverAppBar _buildAppBar(BuildContext context) {
-    return SliverAppBar(
-      floating: true,
-      pinned: true,
-      backgroundColor: const Color(0xFF6200EA), // Primary
-      elevation: 4,
-      title: Text(
-        'Kui',
-        style: GoogleFonts.nunito(
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: 1.5,
+  Widget _buildDifficultyOption(BuildContext context, int levelId, int difficulty, String label, String sublabel, int stars, bool unlocked, Color color) {
+    return InkWell(
+      onTap: unlocked ? () {
+        context.pop(); // Close modal
+        context.push('/lesson/$levelId', extra: difficulty);
+      } : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: unlocked ? color.withOpacity(0.3) : Colors.grey.shade200, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          color: unlocked ? color.withOpacity(0.05) : Colors.grey.shade50,
         ),
-      ),
-      actions: [
-        _buildStatBadge(Icons.local_fire_department, Colors.orangeAccent, '1'),
-        const SizedBox(width: 8),
-        _buildStatBadge(Icons.favorite, Colors.redAccent, '5'),
-        const SizedBox(width: 16),
-      ],
-    );
-  }
-
-  Widget _buildStatBadge(IconData icon, Color iconColor, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            style: GoogleFonts.nunito(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ],
+        child: Row(
+          children: [
+             Container(
+               width: 48,
+               height: 48,
+               decoration: BoxDecoration(
+                 color: unlocked ? color.withOpacity(0.1) : Colors.grey.shade100,
+                 shape: BoxShape.circle,
+               ),
+               child: Icon(
+                 unlocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+                 color: unlocked ? color : Colors.grey.shade400,
+               ),
+             ),
+             const SizedBox(width: 16),
+             Expanded(
+               child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   Text(label, style: GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 18, color: unlocked ? Colors.black87 : Colors.grey)),
+                   Text(sublabel, style: GoogleFonts.nunito(color: unlocked ? Colors.grey.shade600 : Colors.grey, fontSize: 14, fontWeight: FontWeight.w600)),
+                 ],
+               ),
+             ),
+             if (unlocked)
+               Icon(Icons.arrow_forward_ios_rounded, size: 20, color: color)
+          ],
+        ),
       ),
     );
   }
@@ -178,8 +213,9 @@ class _LevelsTabState extends State<LevelsTab> {
 
 class _UnitSection extends StatelessWidget {
   final Unit unit;
+  final Function(Level) onLevelTap;
 
-  const _UnitSection({required this.unit});
+  const _UnitSection({required this.unit, required this.onLevelTap});
 
   @override
   Widget build(BuildContext context) {
@@ -197,10 +233,8 @@ class _UnitSection extends StatelessWidget {
               const SizedBox(height: 16),
               ...unit.levels.map((level) => Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: _LevelCard(level: level),
+                child: _LevelCard(level: level, onTap: () => onLevelTap(level)),
               )),
-              // Reward Chest
-               _RewardCard(),
             ],
           ],
         ),
@@ -217,47 +251,23 @@ class _UnitHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: unit.isLocked 
-            ? (isDark ? const Color(0xFF374151) : Colors.grey[200]) 
-            : unit.color,
+        color: unit.isLocked ? Colors.grey[200] : unit.color,
         borderRadius: BorderRadius.circular(24),
         boxShadow: unit.isLocked ? [] : [
           BoxShadow(
-            color: unit.color.withOpacity(0.5),
-            offset: const Offset(0, 6),
-            blurRadius: 0, 
+            color: unit.color.withOpacity(0.4),
+            offset: const Offset(0, 8),
+            blurRadius: 12, 
           )
         ],
-        border: unit.isLocked ? Border.all(color: Colors.grey.shade300, width: 2) : null,
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background Decoration
-          if (!unit.isLocked)
-            Positioned(
-              bottom: -20,
-              left: -10,
-              child: Transform.rotate(
-                angle: 0.2, // ~12 deg
-                child: Text(
-                  '♪',
-                  style: TextStyle(
-                    fontSize: 80,
-                    color: Colors.white.withOpacity(0.1),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          
-          // Content
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -284,17 +294,10 @@ class _UnitHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: unit.isLocked ? Colors.grey[300] : Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  unit.isLocked ? Icons.lock : Icons.menu_book,
-                  color: unit.isLocked ? Colors.grey[500] : Colors.white,
-                  size: 28,
-                ),
+              Icon(
+                unit.isLocked ? Icons.lock : Icons.menu_book,
+                color: unit.isLocked ? Colors.grey[500] : Colors.white.withOpacity(0.9),
+                size: 28,
               ),
             ],
           ),
@@ -305,42 +308,31 @@ class _UnitHeader extends StatelessWidget {
 }
 
 class _LevelCard extends StatelessWidget {
-  final LevelUI level;
+  final Level level;
+  final VoidCallback onTap;
 
-  const _LevelCard({required this.level});
+  const _LevelCard({required this.level, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // Visual Mocking for now as we don't have level status in the model yet
+    // Assuming mostly active for demo purposes, or we could fetch status async too
+    // For now, let's make them all "Active" style to be safe, or just standard.
     
-    // Status Logic
-    final bool isCompleted = level.status == LevelStatus.completed;
-    final bool isActive = level.status == LevelStatus.active;
-    final bool isLocked = level.status == LevelStatus.locked;
-
-    // Colors
-    final Color borderColor = isActive ? const Color(0xFF6200EA) : (isCompleted ? const Color(0xFF00E676) : Colors.grey.shade300);
-    final Color shadowColor = isActive ? const Color(0xFF3700B3) : (isCompleted ? const Color(0xFF00A854) : Colors.grey.shade400);
-    final Color iconBg = isActive ? const Color(0xFF6200EA) : (isCompleted ? const Color(0xFF00E676) : Colors.grey.shade300);
-    final IconData statusIcon = isActive ? Icons.music_note : (isCompleted ? Icons.check : Icons.lock);
-    final Color iconColor = isLocked ? Colors.grey[500]! : Colors.white;
-    final double elevation = isLocked ? 0 : 6;
+    // Using the 'Active' style from design as default for fetched levels
+    final bool isActive = true; 
 
     return GestureDetector(
-      onTap: isLocked ? null : () {
-        if (level.levelId != null) {
-            context.push('/lesson/${level.levelId}', extra: 1); // Mock difficulty 1
-        }
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: isLocked ? (isDark ? const Color(0xFF374151).withOpacity(0.5) : Colors.grey[100]) : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark && isLocked ? Colors.grey.shade700 : borderColor, width: 2),
-            boxShadow: isLocked ? [] : [
+          border: Border.all(color: const Color(0xFF6200EA), width: 2), // Primary Border
+            boxShadow: const [
                BoxShadow(
-                  color: shadowColor,
-                  offset: Offset(0, elevation),
+                  color: Color(0xFF3700B3), // Primary Dark Shadow
+                  offset: Offset(0, 6),
                   blurRadius: 0
                )
             ]
@@ -352,19 +344,12 @@ class _LevelCard extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                color: iconBg,
+              decoration: const BoxDecoration(
+                color: Color(0xFF6200EA),
                 shape: BoxShape.circle,
-                boxShadow: isLocked ? [] : [
-                   BoxShadow(
-                      color: shadowColor.withOpacity(0.5), // Inner shadow logic mocked slightly
-                      offset: const Offset(0, 2),
-                      blurRadius: 0
-                   )
-                ]
               ),
-              child: Center(
-                child: Icon(statusIcon, color: iconColor, size: 24),
+              child: const Center(
+                child: Icon(Icons.music_note, color: Colors.white, size: 24),
               ),
             ),
             const SizedBox(width: 16),
@@ -375,103 +360,37 @@ class _LevelCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    level.title,
+                    level.name,
                     style: GoogleFonts.nunito(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: isLocked ? Colors.grey[400] : (isDark ? Colors.white : Colors.grey[900]),
+                      color: Colors.grey[900],
                     ),
                   ),
-                  if (isCompleted)
-                    Row(
-                      children: List.generate(3, (index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD600), size: 16)),
-                    ),
-                  if (isActive)
-                     Text(
-                       level.subtitle ?? '¡EN CURSO!',
-                       style: GoogleFonts.nunito(
-                         color: const Color(0xFF6200EA),
-                         fontWeight: FontWeight.bold,
-                         fontSize: 12,
-                         letterSpacing: 0.5
-                       ),
+                   Text(
+                     'DIFICULTAD: ${level.difficulty}', // Showing original difficulty info
+                     style: GoogleFonts.nunito(
+                       color: const Color(0xFF6200EA),
+                       fontWeight: FontWeight.bold,
+                       fontSize: 12,
+                       letterSpacing: 0.5
                      ),
+                   ),
                 ],
               ),
             ),
 
-            // Trailing (Active Tag)
-            if (isActive)
-              Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                 decoration: BoxDecoration(
-                    color: const Color(0xFFB388FF),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 2)
-                 ),
-                 child: Text(
-                    'PRÓXIMO',
-                    style: GoogleFonts.nunito(
-                       color: const Color(0xFF3700B3),
-                       fontWeight: FontWeight.w900,
-                       fontSize: 10
-                    ),
-                 ),
-              )
+            Container(
+               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+               decoration: BoxDecoration(
+                  color: const Color(0xFFB388FF).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+               ),
+               child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF6200EA)),
+            )
           ],
         ),
       ),
     );
-  }
-}
-
-class _RewardCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-     return Container(
-        decoration: BoxDecoration(
-           color: const Color(0xFFFFD600).withOpacity(0.1),
-           borderRadius: BorderRadius.circular(24),
-           border: Border.all(color: const Color(0xFFFFD600), width: 2),
-           boxShadow: const [
-              BoxShadow(
-                 color: Color(0xFFFBC02D), // rgba(0,0,0,0.1) approx
-                 offset: Offset(0, 4),
-                 blurRadius: 0
-              )
-           ]
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-           children: [
-              Container(
-                 width: 48,
-                 height: 48,
-                 decoration: const BoxDecoration(
-                    color: Color(0xFFFFD600),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                       BoxShadow(
-                          color: Color(0xFFFBC02D),
-                          offset: Offset(0, 2)
-                       )
-                    ]
-                 ),
-                 child: const Center(
-                    child: Icon(Icons.inventory_2_rounded, color: Color(0xFF3E2723), size: 24),
-                 ),
-              ),
-              const SizedBox(width: 16),
-               Text(
-                 'Cofre de Recompensas',
-                 style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: const Color(0xFF3E2723) 
-                 ),
-               )
-           ],
-        ),
-     );
   }
 }
