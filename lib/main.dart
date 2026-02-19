@@ -234,13 +234,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: isActive ? Colors.white : Colors.transparent, 
                   width: isActive ? 4 : 0
                 ),
-                boxShadow: isActive ? [
+                boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
+                    color: isActive ? color.withOpacity(0.3) : Colors.transparent,
+                    blurRadius: isActive ? 8 : 0,
                     offset: const Offset(0, 4)
                   )
-                ] : [],
+                ],
               ),
               child: Icon(
                 icon, 
