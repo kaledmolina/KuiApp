@@ -386,119 +386,141 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Logic:
+    // Completed (3 stars) -> Green Styling (HTML Level 1)
+    // Active (< 3 stars) -> Purple Styling (HTML Level 2)
+    // Locked -> Gray Styling (HTML Level 3) - For now assuming all fetched are unlocked in unit context
+    
     final level = levelWP.level;
     final int stars = levelWP.stars;
     
-    // Logic:
-    // Completed (3 stars) -> Green styling
-    // Active/In Progress (< 3 stars) -> Purple styling
-    
     final bool isCompleted = stars == 3;
-    final bool isActive = !isCompleted; // simplified for now
+    final bool isActive = !isCompleted; 
     final bool isLocked = false; 
     
-    final Color borderColor = isCompleted ? const Color(0xFF00E676) : const Color(0xFF6200EA); 
-    final Color? shadowColor = isCompleted ? const Color(0xFF00A854) : const Color(0xFF3700B3);
-    final IconData icon = isCompleted ? Icons.check : Icons.music_note;
-    final Color iconBg = borderColor;
+    // HTML Styles Mapped
+    // Active: border-primary (6200EA), shadow-solid-primary (3700B3)
+    // Completed: border-secondary (00E676), shadow-solid-secondary (00A854)
+    // Locked: bg-gray-100, border-gray-200, opacity-70
+    
+    final Color borderColor = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
+    final Color? shadowColor = isLocked ? null : (isActive ? const Color(0xFF3700B3) : const Color(0xFF00A854));
+    final Color bgColor = isLocked ? const Color(0xFFF3F4F6) : Colors.white;
+    final Color iconBg = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
+    final Color iconColor = isLocked ? Colors.grey : Colors.white;
+    final IconData icon = isActive ? Icons.music_note : (isCompleted ? Icons.check : Icons.lock);
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: borderColor, width: 2),
-            boxShadow: [
+      onTap: isLocked ? null : onTap,
+      child: Opacity(
+        opacity: isLocked ? 0.7 : 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor, width: 2),
+            boxShadow: shadowColor != null ? [
                BoxShadow(
-                  color: shadowColor!,
-                  offset: const Offset(0, 6),
+                  color: shadowColor,
+                  offset: const Offset(0, 6), // solid-primary/secondary
                   blurRadius: 0
                )
-            ]
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-                boxShadow: [
-                   BoxShadow(
-                      color: shadowColor,
-                      offset: const Offset(0, 2),
-                      blurRadius: 0
-                   )
-                ]
-              ),
-              child: Center(
-                child: Icon(icon, color: Colors.white, size: 24),
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ] : [],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    level.name, 
-                    style: GoogleFonts.nunito(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: Colors.grey[900],
+                  // Icon
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      shape: BoxShape.circle,
+                      boxShadow: shadowColor != null ? [
+                         BoxShadow(
+                            color: shadowColor,
+                            offset: const Offset(0, 2), // slightly smaller for icon
+                            blurRadius: 0
+                         )
+                      ] : []
+                    ),
+                    child: Center(
+                      child: Icon(icon, color: iconColor, size: 24),
                     ),
                   ),
-                  if (stars > 0)
-                     Row(
-                        children: List.generate(3, (index) => Icon(
-                           index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
-                           color: const Color(0xFFFFD600),
-                           size: 18)
-                        )
-                     )
-                  else
-                     Padding(
-                       padding: const EdgeInsets.only(top: 2.0),
-                       child: Text(
-                         '¡COMENZAR!',
-                         style: GoogleFonts.nunito(
-                           fontSize: 12,
-                           fontWeight: FontWeight.bold,
-                           color: const Color(0xFF6200EA), 
-                           letterSpacing: -0.5
-                         ),
-                       ),
-                     )
+                  const SizedBox(width: 16),
+                  
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          level.name, 
+                          style: GoogleFonts.nunito(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: isLocked ? Colors.grey[400] : Colors.grey[900],
+                          ),
+                        ),
+                        if (stars > 0)
+                           // Show Stars if any progress
+                           Row(
+                              children: List.generate(3, (index) => Icon(
+                                 index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                                 color: const Color(0xFFFFD600), // accent
+                                 size: 18)
+                              )
+                           )
+                        else
+                           // Show "¡En curso!" text like HTML Level 2 if new/active
+                           Padding(
+                             padding: const EdgeInsets.only(top: 2.0),
+                             child: Text(
+                               '¡En curso!',
+                               style: GoogleFonts.nunito(
+                                 fontSize: 12,
+                                 fontWeight: FontWeight.bold,
+                                 color: const Color(0xFF6200EA), 
+                                 letterSpacing: -0.5,
+                                 textBaseline: TextBaseline.alphabetic
+                               ),
+                             ),
+                           )
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
-            
-            // "PRÓXIMO" Tag (Restored Style)
-            if (isActive && stars == 0) // Only show PRÓXIMO for new levels to avoid clutter? Or just isActive? User said "deja el estilo anterior". Previous had it for active.
-              Container(
-                 transform: Matrix4.translationValues(8, -24, 0), 
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                 decoration: BoxDecoration(
-                    color: const Color(0xFFB388FF), 
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 2)
-                 ),
-                 child: Text(
-                    'PRÓXIMO',
-                    style: GoogleFonts.nunito(
-                       fontSize: 10,
-                       fontWeight: FontWeight.w900,
-                       color: const Color(0xFF3700B3) 
+              
+              // "PRÓXIMO" Tag (Absolute Position like HTML)
+              if (isActive)
+                 Positioned(
+                    top: -24, // -top-2 in HTML relative to button padding? No, here relative to Stack
+                    right: -8,
+                    child: Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                       decoration: BoxDecoration(
+                          color: const Color(0xFFB388FF), // primary-light
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white, width: 2)
+                       ),
+                       child: Text(
+                          'PRÓXIMO',
+                          style: GoogleFonts.nunito(
+                             fontSize: 10,
+                             fontWeight: FontWeight.w900,
+                             color: const Color(0xFF3700B3) // primary-dark
+                          ),
+                       ),
                     ),
-                 ),
-              )
-          ],
+                 )
+            ],
+          ),
         ),
       ),
     );
