@@ -75,8 +75,8 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _buildUserInfo(dynamic user) {
-    // Determine level loosely based on XP or unlocked level to match "Lv. 10" in mockup
-    int level = user.maxUnlockedLevel ?? 1;
+    // Determine level dynamically based on XP to match "Lv. X" in mockup
+    int level = ((user.xpTotal ?? 0) / 100).floor() + 1;
 
     return Column(
       children: [
