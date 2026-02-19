@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:line_icons/line_icons.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'features/auth/presentation/auth_provider.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -89,24 +90,27 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: GoogleFonts.nunito().fontFamily,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6200EE), // Deep Purple
+          seedColor: const Color(0xFF6200EA), // Primary
           brightness: Brightness.light,
-          primary: const Color(0xFF6200EE),
-          secondary: const Color(0xFF03DAC6),
-          tertiary: const Color(0xFFFFD700), // Gold for gamification
+          primary: const Color(0xFF6200EA),
+          secondary: const Color(0xFF00E676),
+          tertiary: const Color(0xFFFFD700),
+          background: const Color(0xFFF3F4F6),
+          surface: const Color(0xFFFFFFFF),
         ),
-        fontFamily: 'Poppins',
+        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
         appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          backgroundColor: Color(0xFF6200EE),
+          backgroundColor: Color(0xFF6200EA),
           foregroundColor: Colors.white,
-          elevation: 0,
+          elevation: 4, // shadow-lg
+          shadowColor: Colors.black54,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
         ),
@@ -139,17 +143,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: _tabs[_currentIndex],
       appBar: AppBar(
-        title: const Text('Kui'),
-        actions: [
-          _buildStreakBadge(context),
-          IconButton(
-            icon: const Icon(LineIcons.alternateSignOut),
-            tooltip: 'Cerrar Sesión',
-            onPressed: () {
-              context.read<AuthProvider>().logout();
-            },
+        title: Text(
+          'Kui',
+          style: GoogleFonts.nunito(
+            fontWeight: FontWeight.w800,
+            fontSize: 24,
+            letterSpacing: 1.5,
           ),
-          const SizedBox(width: 8),
+        ),
+        centerTitle: false, // HTML has title on left
+        actions: [
+          Row(
+            children: [
+               _buildBadge(Icons.local_fire_department_rounded, Colors.orangeAccent, '1'),
+               const SizedBox(width: 8),
+               _buildBadge(Icons.favorite_rounded, Colors.redAccent, '5'),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Removed Logout button from header to match design strictly, or can keep it in Profile tab
         ],
       ),
       bottomNavigationBar: Container(
@@ -206,38 +218,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStreakBadge(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
-    final streak = user?.streakCount ?? 0;
-    
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => const StreakModal(),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            const Icon(LineIcons.fire, color: Colors.amber, size: 20),
-            const SizedBox(width: 4),
-            Text(
-              '$streak',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+  Widget _buildBadge(IconData icon, Color iconColor, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2), // bg-black/20
+        borderRadius: BorderRadius.circular(20), // rounded-full
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
