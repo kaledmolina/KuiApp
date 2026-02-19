@@ -222,30 +222,42 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              transform: Matrix4.translationValues(0, isActive ? -4 : 8, 0),
-              padding: EdgeInsets.all(isActive ? 12 : 0),
-              decoration: BoxDecoration(
-                color: isActive ? color : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isActive ? Colors.white : Colors.transparent, 
-                  width: isActive ? 4 : 0
-                ),
-                boxShadow: isActive ? [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4)
-                  )
-                ] : null,
-              ),
-              child: Icon(
-                icon, 
-                color: isActive ? Colors.white : Colors.grey.shade400, 
-                size: 26
+            SizedBox(
+              height: 50,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutBack,
+                    top: isActive ? -12 : 12,
+                    child: Container(
+                      width: isActive ? 50 : 30,
+                      height: isActive ? 50 : 30,
+                      decoration: isActive ? BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: [
+                           BoxShadow(
+                             color: color.withOpacity(0.3),
+                             blurRadius: 8,
+                             offset: const Offset(0, 4)
+                           )
+                        ],
+                      ) : const BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon, 
+                        color: isActive ? Colors.white : Colors.grey.shade400, 
+                        size: 26
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             AnimatedOpacity(
