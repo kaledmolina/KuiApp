@@ -580,7 +580,7 @@ class _LevelCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       if (state == LevelCardState.completed)
                           Row(
-                              children: List.generate(3, (index) => Icon(
+                              children: List.generate(levelWP.stars, (index) => Icon(
                                  Icons.star_rounded,
                                  color: KuiColors.accent, // Yellow stars
                                  size: 20)
