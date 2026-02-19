@@ -225,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutBack,
-              margin: EdgeInsets.only(bottom: isActive ? 4 : 18), 
+              transform: Matrix4.translationValues(0, isActive ? -4 : 8, 0),
               padding: EdgeInsets.all(isActive ? 12 : 0),
               decoration: BoxDecoration(
                 color: isActive ? color : Colors.transparent,
@@ -234,13 +234,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: isActive ? Colors.white : Colors.transparent, 
                   width: isActive ? 4 : 0
                 ),
-                boxShadow: [
+                boxShadow: isActive ? [
                   BoxShadow(
-                    color: isActive ? color.withOpacity(0.3) : Colors.transparent,
-                    blurRadius: isActive ? 8 : 0,
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
                     offset: const Offset(0, 4)
                   )
-                ],
+                ] : null,
               ),
               child: Icon(
                 icon, 
@@ -248,27 +248,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 26
               ),
             ),
-            AnimatedContainer(
+            AnimatedOpacity(
               duration: const Duration(milliseconds: 300),
-              height: isActive ? 16 : 0,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: isActive 
-                  ? FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        label,
-                        style: GoogleFonts.nunito(
-                          color: color,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
+              opacity: isActive ? 1.0 : 0.0,
+              child: Text(
+                label,
+                style: GoogleFonts.nunito(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                ),
+                maxLines: 1,
               ),
             ),
-            SizedBox(height: isActive ? 8 : 0), 
+            const SizedBox(height: 8), 
           ],
         )
       )
