@@ -584,14 +584,28 @@ class _LevelCard extends StatelessWidget {
                               )
                           )
                       else if (state == LevelCardState.active)
-                          Text(
-                            '¡EN CURSO!',
-                            style: GoogleFonts.nunito(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: KuiColors.primary, 
-                              letterSpacing: 0.5,
-                            ),
+                          Row(
+                            children: [
+                              if (levelWP.stars > 0) ...[
+                                Row(
+                                  children: List.generate(levelWP.stars, (index) => const Icon(
+                                     Icons.star_rounded,
+                                     color: KuiColors.accent, // Yellow stars
+                                     size: 20)
+                                  )
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Text(
+                                '¡EN CURSO!',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: KuiColors.primary, 
+                                  letterSpacing: 0.5,
+                                ),
+                              )
+                            ],
                           )
                       else 
                           Container()
