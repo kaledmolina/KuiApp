@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/api_client.dart';
+import '../../../core/api_client.dart';
 
 class ProgressRepository {
   static const String _keyPrefix = 'level_progress_';
