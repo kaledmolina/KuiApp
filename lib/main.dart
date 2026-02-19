@@ -63,7 +63,12 @@ class _MyAppState extends State<MyApp> {
              final apiClient = ApiClient();
              final repository = LessonRepository(apiClient);
              final difficulty = state.extra as int? ?? 1;
-             return EarTrainingScreen(repository: repository, difficulty: difficulty);
+             final levelId = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+             return EarTrainingScreen(
+               repository: repository, 
+               levelId: levelId,
+               difficulty: difficulty
+             );
           },
         ),
       ],

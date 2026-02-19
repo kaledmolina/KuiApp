@@ -11,13 +11,13 @@ import '../data/progress_repository.dart';
 
 class EarTrainingScreen extends StatefulWidget {
   final LessonRepository repository;
-
-
+  final int levelId;
   final int difficulty;
 
   const EarTrainingScreen({
     super.key,
     required this.repository,
+    required this.levelId,
     required this.difficulty,
   });
 
@@ -97,7 +97,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
       final user = User.fromJson(userData);
       
       // 1. Get Config for Lesson 1
-      final config = await widget.repository.getLessonConfig(1);
+      final config = await widget.repository.getLessonConfig(widget.levelId);
       
       // 2. Get Audio Metadata for Octave 4
       final allNotes = await widget.repository.getNoteAudioList(4);
@@ -302,7 +302,7 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
     final progressRepo = ProgressRepository();
     // Assuming score is something based on difficulty for now. Real game logic would calculate it.
     final score = widget.difficulty * 100;
-    await progressRepo.saveLevelComplete(1, widget.difficulty, score); // Hardcoded level 1 for now
+    await progressRepo.saveLevelComplete(widget.levelId, widget.difficulty, score); 
     
     if (!mounted) return;
     
