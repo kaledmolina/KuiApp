@@ -251,18 +251,22 @@ class _HomeScreenState extends State<HomeScreen> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               height: isActive ? 16 : 0,
-              child: isActive 
-                ? FittedBox(
-                    child: Text(
-                      label,
-                      style: GoogleFonts.nunito(
-                        color: color,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: isActive 
+                  ? FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        style: GoogleFonts.nunito(
+                          color: color,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
+                    )
+                  : const SizedBox.shrink(),
+              ),
             ),
             SizedBox(height: isActive ? 8 : 0), 
           ],
