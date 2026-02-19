@@ -11,6 +11,7 @@ const Color bgLight = Color(0xFFF3F4F6);
 const Color textDark = Color(0xFF1F2937);
 const Color accentGreen = Color(0xFF58CC02);
 const Color accentRed = Color(0xFFEF4444);
+const Color cardLight = Color(0xFFFFFFFF);
 
 class RankingTab extends StatefulWidget {
   const RankingTab({super.key});
