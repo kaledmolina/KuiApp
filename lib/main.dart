@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:line_icons/line_icons.dart';
 
 import 'features/auth/presentation/auth_provider.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -140,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           _buildStreakBadge(context),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(LineIcons.alternateSignOut),
             tooltip: 'Cerrar Sesión',
             onPressed: () {
               context.read<AuthProvider>().logout();
@@ -149,31 +151,56 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.music_note),
-            label: 'Niveles',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: Colors.black.withOpacity(.1),
+            )
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+            child: GNav(
+              rippleColor: Colors.grey[300]!,
+              hoverColor: Colors.grey[100]!,
+              gap: 8,
+              activeColor: Theme.of(context).primaryColor,
+              iconSize: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              duration: const Duration(milliseconds: 400),
+              tabBackgroundColor: Colors.grey[100]!,
+              color: Colors.black,
+              tabs: const [
+                GButton(
+                  icon: LineIcons.music,
+                  text: 'Niveles',
+                ),
+                GButton(
+                  icon: LineIcons.stopwatch,
+                  text: 'Práctica',
+                ),
+                GButton(
+                  icon: LineIcons.trophy,
+                  text: 'Ranking',
+                ),
+                GButton(
+                  icon: LineIcons.user,
+                  text: 'Perfil',
+                ),
+              ],
+              selectedIndex: _currentIndex,
+              onTabChange: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.timer),
-            label: 'Práctica',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events),
-            label: 'Ranking',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -198,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.local_fire_department, color: Colors.amber, size: 20),
+            const Icon(LineIcons.fire, color: Colors.amber, size: 20),
             const SizedBox(width: 4),
             Text(
               '$streak',
