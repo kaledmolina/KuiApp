@@ -212,6 +212,16 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
           ],
           border: Border.all(color: Colors.black, width: 1),
         ),
+        alignment: Alignment.bottomCenter,
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          note,
+          style: const TextStyle(
+            color: Colors.white70, 
+            fontSize: 10, 
+            fontWeight: FontWeight.bold
+          ),
+        ),
       ),
     );
   }
