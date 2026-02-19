@@ -61,7 +61,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: LoginScreen build');
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
@@ -189,26 +188,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // Social Login Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   _SocialButton(
-                     icon: Icons.g_mobiledata, // Placeholder for Google
-                     onPressed: (){},
-                   ),
-                   const SizedBox(width: 16),
-                   _SocialButton(
-                     icon: Icons.apple, // Placeholder for Apple
-                     onPressed: (){},
-                   ),
-                   const SizedBox(width: 16),
-                   const _GuestButton(),
-                ],
-              ),
-              
               const SizedBox(height: 24),
               // Register Link
               Row(
@@ -455,70 +434,4 @@ class _BubblyButtonState extends State<_BubblyButton> {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
 
-  const _SocialButton({required this.icon, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-       width: 56,
-       height: 56,
-       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border(
-             bottom: BorderSide(color: Colors.grey.shade200, width: 4),
-          ),
-          boxShadow: [
-             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 2,
-                offset: const Offset(0, 2),
-             )
-          ]
-       ),
-       child: Center(
-          child: Icon(icon, size: 28, color: Colors.black87),
-       ),
-    );
-  }
-}
-
-class _GuestButton extends StatelessWidget {
-  const _GuestButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-       width: 56,
-       height: 56,
-       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border(
-             bottom: BorderSide(color: Colors.grey.shade200, width: 4),
-          ),
-          boxShadow: [
-             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 2,
-                offset: const Offset(0, 2),
-             )
-          ]
-       ),
-       child: Center(
-          child: Text(
-             'GUEST',
-             style: GoogleFonts.nunito(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[400],
-             ),
-          )
-       ),
-    );
-  }
-}
