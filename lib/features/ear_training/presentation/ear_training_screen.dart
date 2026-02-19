@@ -300,7 +300,9 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
   void _handleLevelComplete() async {
     // Save progress locally
     final progressRepo = ProgressRepository();
-    await progressRepo.saveLevelComplete(1, widget.difficulty); // Hardcoded level 1 for now
+    // Assuming score is something based on difficulty for now. Real game logic would calculate it.
+    final score = widget.difficulty * 100;
+    await progressRepo.saveLevelComplete(1, widget.difficulty, score); // Hardcoded level 1 for now
     
     if (!mounted) return;
     

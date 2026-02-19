@@ -86,15 +86,12 @@ class _LevelsTabState extends State<LevelsTab> {
   
   Future<List<LevelWithProgress>> _fetchLevelsWithProgress() async {
     final repository = LessonRepository(ApiClient());
-    final progressRepo = ProgressRepository();
     
     try {
       final levels = await repository.getLevels();
-      final futures = levels.map((level) async {
-        final unlocked = await progressRepo.getMaxUnlockedDifficulty(level.id);
-        return LevelWithProgress(level, unlocked);
-      });
-      return Future.wait(futures);
+      return levels.map((level) {
+        return LevelWithProgress(level, level.maxUnlockedDifficulty);
+      }).toList();
     } catch (e) {
       return [];
     }
@@ -123,7 +120,7 @@ class _LevelsTabState extends State<LevelsTab> {
             child: Column(
               children: units.map((unit) => _UnitSection(
                 unit: unit,
-                onLevelTap: (levelWP) => _showDifficultyDialog(context, levelWP.level.id),
+                onLevelTap: (levelWP) => _showDifficultyDialog(context, levelWP),
               )).toList(),
             ),
           );
@@ -162,9 +159,9 @@ class _LevelsTabState extends State<LevelsTab> {
     return units;
   }
 
-  void _showDifficultyDialog(BuildContext context, int levelId) async {
-    final progressRepo = ProgressRepository();
-    final maxUnlocked = await progressRepo.getMaxUnlockedDifficulty(levelId);
+  void _showDifficultyDialog(BuildContext context, LevelWithProgress levelWP) async {
+    final maxUnlocked = levelWP.unlockedDifficulty;
+    final levelId = levelWP.level.id;
 
     if (!context.mounted) return;
 
