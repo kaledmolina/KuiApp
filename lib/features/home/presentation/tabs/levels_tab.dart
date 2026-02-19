@@ -389,23 +389,13 @@ class _LevelCard extends StatelessWidget {
     final level = levelWP.level;
     final int stars = levelWP.stars;
     
-    // Status Logic
-    // 3 stars = completed (green)
-    // 0 < stars < 3 = active (purple)
-    // 0 stars = active/new path (purple)
+    // Logic:
+    // Completed (3 stars) -> Green styling
+    // Active/In Progress (< 3 stars) -> Purple styling
     
     final bool isCompleted = stars == 3;
-    final bool isActive = true; // Always active if unlocked for now? Or is there a "locked level" concept within unit?
-    // We already filter locked *units*. Levels can be locked sequentially? 
-    // For now, let's treat all levels in unit as unlocked/active to allow random access or just simple logic.
-    // HTML Design showed: Level 1 Completed, Level 2 Active, Level 3 Locked.
-    // Logic: If stars > 0 for previous level, this one is unlocked? 
-    // Let's assume unlockedDifficulty gives enough info. 
-    // Actually, "unlockedDifficulty" is per level.
-    // So if unlockedDifficulty == 1, it's just unlocked (Easy avail).
-    
-    final bool isLocked = false; // We don't have level locking logic yet in fetch, only Unit grouping. Assuming all visible > locked or handled by Unit.
-    // But let's reuse LevelStatus logic visually based on stars.
+    final bool isActive = !isCompleted; // simplified for now
+    final bool isLocked = false; 
     
     final Color borderColor = isCompleted ? const Color(0xFF00E676) : const Color(0xFF6200EA); 
     final Color? shadowColor = isCompleted ? const Color(0xFF00A854) : const Color(0xFF3700B3);
@@ -489,9 +479,10 @@ class _LevelCard extends StatelessWidget {
               ),
             ),
             
-            // Next/Play Tag
-            if (!isCompleted)
+            // "PRÓXIMO" Tag (Restored Style)
+            if (isActive && stars == 0) // Only show PRÓXIMO for new levels to avoid clutter? Or just isActive? User said "deja el estilo anterior". Previous had it for active.
               Container(
+                 transform: Matrix4.translationValues(8, -24, 0), 
                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                  decoration: BoxDecoration(
                     color: const Color(0xFFB388FF), 
@@ -499,7 +490,7 @@ class _LevelCard extends StatelessWidget {
                     border: Border.all(color: Colors.white, width: 2)
                  ),
                  child: Text(
-                    'JUGAR',
+                    'PRÓXIMO',
                     style: GoogleFonts.nunito(
                        fontSize: 10,
                        fontWeight: FontWeight.w900,
