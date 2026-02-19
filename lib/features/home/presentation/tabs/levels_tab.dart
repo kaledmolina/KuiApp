@@ -7,6 +7,20 @@ import '../../../ear_training/data/progress_repository.dart';
 import '../../../../core/api_client.dart';
 
 // --- Models for UI ---
+// --- Models for UI ---
+class LevelWithProgress {
+  final Level level;
+  final int unlockedDifficulty;
+
+  LevelWithProgress(this.level, this.unlockedDifficulty);
+  
+  // 1 Unlocked -> 0 stars (Haven't passed easy)
+  // 2 Unlocked -> 1 star (Passed easy)
+  // 3 Unlocked -> 2 stars (Passed medium)
+  // 4 Unlocked -> 3 stars (Passed hard)
+  int get stars => (unlockedDifficulty - 1).clamp(0, 3);
+}
+
 enum LevelStatus { completed, active, locked }
 
 class Unit {
@@ -15,7 +29,7 @@ class Unit {
   final String subtitle;
   final Color color;
   final bool isLocked;
-  final List<Level> levels;
+  final List<LevelWithProgress> levels;
 
   Unit({
     required this.number,
@@ -37,13 +51,28 @@ class LevelsTab extends StatefulWidget {
 }
 
 class _LevelsTabState extends State<LevelsTab> {
-  late Future<List<Level>> _levelsFuture;
+  late Future<List<LevelWithProgress>> _levelsFuture;
 
   @override
   void initState() {
     super.initState();
+    _levelsFuture = _fetchLevelsWithProgress();
+  }
+  
+  Future<List<LevelWithProgress>> _fetchLevelsWithProgress() async {
     final repository = LessonRepository(ApiClient());
-    _levelsFuture = repository.getLevels();
+    final progressRepo = ProgressRepository();
+    
+    try {
+      final levels = await repository.getLevels();
+      final futures = levels.map((level) async {
+        final unlocked = await progressRepo.getMaxUnlockedDifficulty(level.id);
+        return LevelWithProgress(level, unlocked);
+      });
+      return Future.wait(futures);
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
@@ -55,7 +84,7 @@ class _LevelsTabState extends State<LevelsTab> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: FutureBuilder<List<Level>>(
+      body: FutureBuilder<List<LevelWithProgress>>(
         future: _levelsFuture,
         builder: (context, snapshot) {
            if (snapshot.connectionState == ConnectionState.waiting) {
@@ -67,7 +96,6 @@ class _LevelsTabState extends State<LevelsTab> {
           }
 
           final levels = snapshot.data!;
-          // Group levels into Units (e.g., 5 levels per unit)
           final units = _groupLevelsIntoUnits(levels);
 
           return SingleChildScrollView(
@@ -75,7 +103,7 @@ class _LevelsTabState extends State<LevelsTab> {
             child: Column(
               children: units.map((unit) => _UnitSection(
                 unit: unit,
-                onLevelTap: (level) => _showDifficultyDialog(context, level.id),
+                onLevelTap: (levelWP) => _showDifficultyDialog(context, levelWP.level.id),
               )).toList(),
             ),
           );
@@ -84,7 +112,7 @@ class _LevelsTabState extends State<LevelsTab> {
     );
   }
   
-  List<Unit> _groupLevelsIntoUnits(List<Level> levels) {
+  List<Unit> _groupLevelsIntoUnits(List<LevelWithProgress> levels) {
     final List<Unit> units = [];
     int chunkSize = 5;
     
@@ -106,7 +134,7 @@ class _LevelsTabState extends State<LevelsTab> {
         subtitle: 'Unidad ${unitIndex + 1}',
         color: theme['color'] as Color,
         levels: chunk,
-        isLocked: false, // For now, assuming units are unlocked or logic is handled elsewhere
+        isLocked: false,
       ));
     }
     return units;
@@ -121,41 +149,54 @@ class _LevelsTabState extends State<LevelsTab> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      backgroundColor: Colors.white,
+      isScrollControlled: true, // Allow modal to be taller and responsive
+      backgroundColor: Colors.transparent, // Use child container for styling
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          constraints: BoxConstraints(
+             maxHeight: MediaQuery.of(context).size.height * 0.85 // Max 85% height
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              Text(
-                'Selecciona la Dificultad',
-                style: GoogleFonts.nunito(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                Text(
+                  'Selecciona la Dificultad',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              _buildDifficultyOption(context, levelId, 1, 'Fácil', '10 Preguntas, 30s', 1, maxUnlocked >= 1, Colors.green),
-              const SizedBox(height: 12),
-              _buildDifficultyOption(context, levelId, 2, 'Medio', '15 Preguntas, 20s', 2, maxUnlocked >= 2, Colors.orange),
-              const SizedBox(height: 12),
-              _buildDifficultyOption(context, levelId, 3, 'Difícil', '20 Preguntas, 10s', 3, maxUnlocked >= 3, Colors.red),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+                // Responsive Columns if wide, Stack if narrow? For now standard list is fine for mobile.
+                Column(
+                   children: [
+                      _buildDifficultyOption(context, levelId, 1, 'Fácil', '10 Preguntas, 30s', 1, maxUnlocked >= 1, Colors.green),
+                      const SizedBox(height: 12),
+                      _buildDifficultyOption(context, levelId, 2, 'Medio', '15 Preguntas, 20s', 2, maxUnlocked >= 2, Colors.orange),
+                      const SizedBox(height: 12),
+                      _buildDifficultyOption(context, levelId, 3, 'Difícil', '20 Preguntas, 10s', 3, maxUnlocked >= 3, Colors.red),
+                   ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       },
@@ -166,7 +207,11 @@ class _LevelsTabState extends State<LevelsTab> {
     return InkWell(
       onTap: unlocked ? () {
         context.pop(); // Close modal
-        context.push('/lesson/$levelId', extra: difficulty);
+        context.push('/lesson/$levelId', extra: difficulty).then((_) {
+           setState(() {
+              _levelsFuture = _fetchLevelsWithProgress();
+           });
+        });
       } : null,
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -213,7 +258,7 @@ class _LevelsTabState extends State<LevelsTab> {
 
 class _UnitSection extends StatelessWidget {
   final Unit unit;
-  final Function(Level) onLevelTap;
+  final Function(LevelWithProgress) onLevelTap;
 
   const _UnitSection({required this.unit, required this.onLevelTap});
 
@@ -231,9 +276,9 @@ class _UnitSection extends StatelessWidget {
             // Levels List (if unlocked)
             if (!unit.isLocked) ...[
               const SizedBox(height: 16),
-              ...unit.levels.map((level) => Padding(
+              ...unit.levels.map((levelWP) => Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: _LevelCard(level: level, onTap: () => onLevelTap(level)),
+                child: _LevelCard(levelWP: levelWP, onTap: () => onLevelTap(levelWP)),
               )),
             ],
           ],
@@ -334,134 +379,135 @@ class _UnitHeader extends StatelessWidget {
 }
 
 class _LevelCard extends StatelessWidget {
-  final Level level;
+  final LevelWithProgress levelWP;
   final VoidCallback onTap;
 
-  const _LevelCard({required this.level, required this.onTap});
+  const _LevelCard({required this.levelWP, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    // Determining status mock (Active vs Completed vs Locked)
-    // For now assuming all Active for demo, but applying styles based on hypothetical state
-    // Let's make Level 1 Completed, Level 2 Active, Level 3 Locked
+    final level = levelWP.level;
+    final int stars = levelWP.stars;
     
-    LevelStatus status = LevelStatus.active;
-    if (level.name.contains('Nivel 1')) status = LevelStatus.completed;
-    if (level.name.contains('Nivel 3')) status = LevelStatus.locked;
+    // Status Logic
+    // 3 stars = completed (green)
+    // 0 < stars < 3 = active (purple)
+    // 0 stars = active/new path (purple)
     
-    final bool isCompleted = status == LevelStatus.completed;
-    final bool isActive = status == LevelStatus.active;
-    final bool isLocked = status == LevelStatus.locked;
+    final bool isCompleted = stars == 3;
+    final bool isActive = true; // Always active if unlocked for now? Or is there a "locked level" concept within unit?
+    // We already filter locked *units*. Levels can be locked sequentially? 
+    // For now, let's treat all levels in unit as unlocked/active to allow random access or just simple logic.
+    // HTML Design showed: Level 1 Completed, Level 2 Active, Level 3 Locked.
+    // Logic: If stars > 0 for previous level, this one is unlocked? 
+    // Let's assume unlockedDifficulty gives enough info. 
+    // Actually, "unlockedDifficulty" is per level.
+    // So if unlockedDifficulty == 1, it's just unlocked (Easy avail).
     
-    // HTML Styles Mapped
-    // Active: border-primary (6200EA), shadow-solid-primary (3700B3)
-    // Completed: border-secondary (00E676), shadow-solid-secondary (00A854)
-    // Locked: bg-gray-100, border-gray-200, opacity-70
+    final bool isLocked = false; // We don't have level locking logic yet in fetch, only Unit grouping. Assuming all visible > locked or handled by Unit.
+    // But let's reuse LevelStatus logic visually based on stars.
     
-    final Color borderColor = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
-    final Color? shadowColor = isLocked ? null : (isActive ? const Color(0xFF3700B3) : const Color(0xFF00A854));
-    final Color bgColor = isLocked ? const Color(0xFFF3F4F6) : Colors.white;
-    final Color iconBg = isLocked ? const Color(0xFFE5E7EB) : (isActive ? const Color(0xFF6200EA) : const Color(0xFF00E676));
-    final Color iconColor = isLocked ? Colors.grey : Colors.white;
-    final IconData icon = isActive ? Icons.music_note : (isCompleted ? Icons.check : Icons.lock);
+    final Color borderColor = isCompleted ? const Color(0xFF00E676) : const Color(0xFF6200EA); 
+    final Color? shadowColor = isCompleted ? const Color(0xFF00A854) : const Color(0xFF3700B3);
+    final IconData icon = isCompleted ? Icons.check : Icons.music_note;
+    final Color iconBg = borderColor;
 
     return GestureDetector(
-      onTap: isLocked ? null : onTap,
-      child: Opacity(
-        opacity: isLocked ? 0.7 : 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 2),
-            boxShadow: shadowColor != null ? [
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: borderColor, width: 2),
+            boxShadow: [
                BoxShadow(
-                  color: shadowColor,
-                  offset: const Offset(0, 6), // solid-primary/secondary
+                  color: shadowColor!,
+                  offset: const Offset(0, 6),
                   blurRadius: 0
                )
-            ] : [],
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  shape: BoxShape.circle,
-                  // HTML has shadow-solid-secondary/primary on the CIRCLE too for completed/active
-                  boxShadow: shadowColor != null ? [
-                     BoxShadow(
-                        color: shadowColor,
-                        offset: const Offset(0, 2), // slightly smaller for icon
-                        blurRadius: 0
+            ]
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconBg,
+                shape: BoxShape.circle,
+                boxShadow: [
+                   BoxShadow(
+                      color: shadowColor,
+                      offset: const Offset(0, 2),
+                      blurRadius: 0
+                   )
+                ]
+              ),
+              child: Center(
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    level.name, 
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: Colors.grey[900],
+                    ),
+                  ),
+                  if (stars > 0)
+                     Row(
+                        children: List.generate(3, (index) => Icon(
+                           index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                           color: const Color(0xFFFFD600),
+                           size: 18)
+                        )
                      )
-                  ] : []
-                ),
-                child: Center(
-                  child: Icon(icon, color: iconColor, size: 24),
-                ),
-              ),
-              const SizedBox(width: 16),
-              
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      level.name, // e.g. "Nivel 1: Teclas Blancas"
-                      style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.w800, // font-extrabold
-                        fontSize: 16,
-                        color: isLocked ? Colors.grey[400] : Colors.grey[900],
-                      ),
-                    ),
-                    if (isCompleted)
-                       Row(
-                          children: List.generate(3, (index) => const Icon(Icons.star_rounded, color: Color(0xFFFFD600), size: 18))
-                       ),
-                    if (isActive)
-                       Padding(
-                         padding: const EdgeInsets.only(top: 2.0),
-                         child: Text(
-                           '¡EN CURSO!',
-                           style: GoogleFonts.nunito(
-                             fontSize: 12,
-                             fontWeight: FontWeight.bold,
-                             color: const Color(0xFF6200EA), // text-primary
-                             letterSpacing: -0.5 // tracking-tight
-                           ),
+                  else
+                     Padding(
+                       padding: const EdgeInsets.only(top: 2.0),
+                       child: Text(
+                         '¡COMENZAR!',
+                         style: GoogleFonts.nunito(
+                           fontSize: 12,
+                           fontWeight: FontWeight.bold,
+                           color: const Color(0xFF6200EA), 
+                           letterSpacing: -0.5
                          ),
-                       )
-                  ],
-                ),
-              ),
-              
-              // Tag for Active
-              if (isActive)
-                 Container(
-                    transform: Matrix4.translationValues(8, -24, 0), // Absolute positioning hack
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                       color: const Color(0xFFB388FF), // Primary Light
-                       borderRadius: BorderRadius.circular(8),
-                       border: Border.all(color: Colors.white, width: 2)
-                    ),
-                    child: Text(
-                       'PRÓXIMO',
-                       style: GoogleFonts.nunito(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF3700B3) // Primary Dark
                        ),
+                     )
+                ],
+              ),
+            ),
+            
+            // Next/Play Tag
+            if (!isCompleted)
+              Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                 decoration: BoxDecoration(
+                    color: const Color(0xFFB388FF), 
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white, width: 2)
+                 ),
+                 child: Text(
+                    'JUGAR',
+                    style: GoogleFonts.nunito(
+                       fontSize: 10,
+                       fontWeight: FontWeight.w900,
+                       color: const Color(0xFF3700B3) 
                     ),
-                 )
-            ],
-          ),
+                 ),
+              )
+          ],
         ),
       ),
     );

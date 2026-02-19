@@ -10,8 +10,8 @@ class ProgressRepository {
     // Get current max unlocked difficulty
     final currentMax = prefs.getInt(key) ?? 1;
     
-    // If we completed the current max difficulty, unlock the next one (up to 3)
-    if (difficulty >= currentMax && currentMax < 3) {
+    // If we completed the current max difficulty, unlock the next one (up to 4 for mastery)
+    if (difficulty >= currentMax && currentMax < 4) {
       await prefs.setInt(key, currentMax + 1);
     }
   }
@@ -22,3 +22,4 @@ class ProgressRepository {
     return prefs.getInt(key) ?? 1; // Default to 1 (Easy unlocked)
   }
 }
+
