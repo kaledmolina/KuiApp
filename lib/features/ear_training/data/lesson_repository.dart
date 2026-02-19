@@ -108,7 +108,10 @@ class LessonRepository {
   Future<String> downloadAudio(String url, String filename) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$filename');
+      
+      // Cache buster: Append a version tag to the filename so the app ignores old files
+      final versionedFilename = filename.replaceAll('.webm', '_v3.webm');
+      final file = File('${dir.path}/$versionedFilename');
 
       if (await file.exists()) {
         return file.path;
