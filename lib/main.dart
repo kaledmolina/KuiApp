@@ -2,8 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:line_icons/line_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'features/auth/presentation/auth_provider.dart';
@@ -15,6 +13,7 @@ import 'features/home/presentation/tabs/levels_tab.dart';
 import 'features/home/presentation/tabs/practice_tab.dart';
 import 'features/home/presentation/tabs/profile_tab.dart';
 import 'features/home/presentation/tabs/ranking_tab.dart';
+import 'features/home/presentation/tabs/store_tab.dart';
 import 'features/home/presentation/widgets/streak_modal.dart';
 
 void main() {
@@ -141,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     PracticeTab(),
     RankingTab(),
     ProfileTab(),
+    StoreTab(),
   ];
 
   @override
@@ -170,56 +170,104 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              color: Colors.black.withOpacity(.1),
-            )
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
-            child: GNav(
-              rippleColor: Colors.grey[300]!,
-              hoverColor: Colors.grey[100]!,
-              gap: 8,
-              activeColor: Theme.of(context).primaryColor,
-              iconSize: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              duration: const Duration(milliseconds: 400),
-              tabBackgroundColor: Colors.grey[100]!,
-              color: Colors.black,
-              tabs: const [
-                GButton(
-                  icon: LineIcons.music,
-                  text: 'Niveles',
-                ),
-                GButton(
-                  icon: LineIcons.stopwatch,
-                  text: 'Práctica',
-                ),
-                GButton(
-                  icon: LineIcons.trophy,
-                  text: 'Ranking',
-                ),
-                GButton(
-                  icon: LineIcons.user,
-                  text: 'Perfil',
-                ),
-              ],
-              selectedIndex: _currentIndex,
-              onTabChange: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
+        height: 90 + MediaQuery.of(context).padding.bottom,
+        color: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              height: 65 + MediaQuery.of(context).padding.bottom,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  )
+                ],
+              ),
             ),
-          ),
-        ),
+            Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildNavItem(0, Icons.music_note_rounded, 'Niveles'),
+                  _buildNavItem(1, Icons.timer_rounded, 'Práctica'),
+                  _buildNavItem(2, Icons.emoji_events_rounded, 'Ranking'),
+                  _buildNavItem(3, Icons.person_rounded, 'Perfil'),
+                  _buildNavItem(4, Icons.storefront_rounded, 'Tienda'),
+                ]
+              ),
+            )
+          ]
+        )
       ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isActive = _currentIndex == index;
+    final color = const Color(0xFF8B5CF6); // Theme purple to match UI
+
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 65,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
+              margin: EdgeInsets.only(bottom: isActive ? 4 : 18), 
+              padding: EdgeInsets.all(isActive ? 12 : 0),
+              decoration: BoxDecoration(
+                color: isActive ? color : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isActive ? Colors.white : Colors.transparent, 
+                  width: isActive ? 4 : 0
+                ),
+                boxShadow: isActive ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4)
+                  )
+                ] : [],
+              ),
+              child: Icon(
+                icon, 
+                color: isActive ? Colors.white : Colors.grey.shade400, 
+                size: 26
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: isActive ? 16 : 0,
+              child: isActive 
+                ? FittedBox(
+                    child: Text(
+                      label,
+                      style: GoogleFonts.nunito(
+                        color: color,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            ),
+            SizedBox(height: isActive ? 8 : 0), 
+          ],
+        )
+      )
     );
   }
 
