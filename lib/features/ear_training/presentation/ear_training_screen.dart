@@ -96,11 +96,28 @@ class _EarTrainingScreenState extends State<EarTrainingScreen> with TickerProvid
       final userData = await widget.repository.getUser();
       final user = User.fromJson(userData);
       
-      // 1. Get Config for Lesson 1
+      // 1. Get Config for Lesson Let
       final config = await widget.repository.getLessonConfig(widget.levelId);
       
-      // 2. Get Audio Metadata for Octave 4
-      final allNotes = await widget.repository.getNoteAudioList(4);
+      // Determine required octaves from config.notes
+      Set<int> requiredOctaves = {4}; // Default to 4
+      for (var note in config.notes) {
+        if (note.length >= 2) {
+          int? oct = int.tryParse(note.substring(note.length - 1));
+          if (oct != null) requiredOctaves.add(oct);
+        }
+      }
+
+      // 2. Get Audio Metadata for all needed octaves
+      List<NoteAudio> allNotes = [];
+      for (int octave in requiredOctaves) {
+        try {
+          final notes = await widget.repository.getNoteAudioList(octave);
+          allNotes.addAll(notes);
+        } catch (e) {
+          debugPrint("Failed to fetch octave $octave: $e");
+        }
+      }
       
       // 3. Filter notes based on config
       lessonNotes = allNotes.where((n) => config.notes.contains(n.fullName)).toList();

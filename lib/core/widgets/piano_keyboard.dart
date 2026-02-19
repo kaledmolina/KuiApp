@@ -47,17 +47,38 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    // Current Range C4-B4
-    final whiteKeys = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'];
-    final blackKeys = ['C#4', 'D#4', null, 'F#4', 'G#4', 'A#4'];
+    int minOctave = 4;
+    int maxOctave = 4;
+    for (String note in widget.availableNotes) {
+      if (note.length >= 2) {
+        int? oct = int.tryParse(note.substring(note.length - 1));
+        if (oct != null) {
+          if (oct < minOctave) minOctave = oct;
+          if (oct > maxOctave) maxOctave = oct;
+        }
+      }
+    }
+
+    final whiteKeys = <String>[];
+    final blackKeys = <String?>[];
+
+    for (int i = minOctave; i <= maxOctave; i++) {
+      whiteKeys.addAll(['C$i', 'D$i', 'E$i', 'F$i', 'G$i', 'A$i', 'B$i']);
+      blackKeys.addAll(['C#$i', 'D#$i', null, 'F#$i', 'G#$i', 'A#$i', null]);
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final keyWidth = constraints.maxWidth / whiteKeys.length;
+        double keyWidth = constraints.maxWidth / whiteKeys.length;
+        if (keyWidth < 40.0) {
+          keyWidth = 40.0; // Ensure keys are wide enough to tap
+        }
+        final totalWidth = keyWidth * whiteKeys.length;
         final blackKeyWidth = keyWidth * 0.6;
         final height = 200.0;
 
-        return SizedBox(
+        Widget piano = SizedBox(
+          width: totalWidth,
           height: height,
           child: Stack(
             clipBehavior: Clip.none,
@@ -90,6 +111,14 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
             ],
           ),
         );
+
+        if (totalWidth > constraints.maxWidth) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: piano,
+          );
+        }
+        return piano;
       },
     );
   }
