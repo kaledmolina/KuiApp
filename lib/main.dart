@@ -145,6 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    final lives = user?.lives ?? 5;
+    final streak = user?.streakCount ?? 0;
+
     return Scaffold(
       body: _tabs[_currentIndex],
       appBar: AppBar(
@@ -160,13 +164,12 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           Row(
             children: [
-               _buildBadge(Icons.local_fire_department_rounded, Colors.orangeAccent, '1'),
+               _buildBadge(Icons.local_fire_department_rounded, Colors.orangeAccent, '$streak'),
                const SizedBox(width: 8),
-               _buildBadge(Icons.favorite_rounded, Colors.redAccent, '5'),
+               _buildBadge(Icons.favorite_rounded, Colors.redAccent, '$lives'),
             ],
           ),
           const SizedBox(width: 16),
-          // Removed Logout button from header to match design strictly, or can keep it in Profile tab
         ],
       ),
       bottomNavigationBar: Container(
