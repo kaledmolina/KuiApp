@@ -69,6 +69,7 @@ class _MyAppState extends State<MyApp> {
       redirect: (context, state) {
         final isLoggedIn = authProvider.isAuthenticated;
         final isLoggingIn = state.matchedLocation == '/login';
+        print('DEBUG: redirect check. Auth: $isLoggedIn, Loc: ${state.matchedLocation}');
         
         // If not logged in and not on login page, go to login
         if (!isLoggedIn && !isLoggingIn) return '/login';

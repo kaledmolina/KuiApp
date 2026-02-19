@@ -61,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: LoginScreen build');
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     child: child,
                   );
                 },
-                child: const _Mascot(),
+                child: const RepaintBoundary(child: _Mascot()),
               ),
               const SizedBox(height: 32),
               Text(

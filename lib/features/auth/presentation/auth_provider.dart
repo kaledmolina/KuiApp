@@ -52,7 +52,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> checkAuth() async {
+    print('DEBUG: checking auth');
     final token = await _storage.read(key: 'jwt_token');
+    print('DEBUG: token found? ${token != null}');
     if (token != null) {
       // Ideally verify token with API or decode it
       // For now just assume authenticated if token exists
