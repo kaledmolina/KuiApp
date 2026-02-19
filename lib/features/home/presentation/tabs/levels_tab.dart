@@ -6,7 +6,7 @@ import '../../../ear_training/models/level_model.dart';
 import '../../../ear_training/data/progress_repository.dart';
 import '../../../../core/api_client.dart';
 
-// --- Colors from Mockup & Request ---
+// --- Colors from Mockup ---
 class KuiColors {
   static const primary = Color(0xFF6200EA); // Deep Purple
   static const primaryDark = Color(0xFF3700B3);
@@ -16,15 +16,9 @@ class KuiColors {
   static const secondaryDark = Color(0xFF00A854);
   
   static const accent = Color(0xFFFFD600); // Yellow/Gold
-  static const accentDark = Color(0xFFFBC02D);
   static const brown = Color(0xFF5D4037); 
   
-  static const bgCompleted = Colors.white;
-  static const borderCompleted = secondary;
-  
-  static const bgActive = Colors.white;
-  static const borderActive = primary;
-  
+  static const bgStandard = Colors.white;
   static const bgLocked = Color(0xFFF3F4F6); // Light Gray
   static const borderLocked = Color(0xFFE5E7EB);
   static const shadowLocked = Color(0xFF9CA3AF);
@@ -33,15 +27,23 @@ class KuiColors {
   static const borderReward = accent;
 }
 
-// --- Models for UI ---
+// --- Models ---
 class LevelWithProgress {
   final Level level;
   final int unlockedDifficulty;
 
   LevelWithProgress(this.level, this.unlockedDifficulty);
   
+  // Logic: 
+  // 0 = Locked
+  // 1 = Unlocked (0 stars)
+  // 2 = Passed Easy (1 star)
+  // 3 = Passed Medium (2 stars)
+  // 4 = Passed Hard (3 stars)
   int get stars => (unlockedDifficulty - 1).clamp(0, 3);
-  bool get isCompleted => stars >= 3;
+  
+  // A level is "Completed" if passed at least Easy (1 star).
+  bool get isCompleted => stars >= 1;
 }
 
 class Unit {
@@ -61,6 +63,8 @@ class Unit {
     required this.levels,
   });
 }
+
+enum LevelCardState { completed, active, locked }
 
 // --- Main Tab ---
 
@@ -132,6 +136,7 @@ class _LevelsTabState extends State<LevelsTab> {
     final List<Unit> units = [];
     int chunkSize = 5; 
     
+    // Themes matching screenshot
     final themes = [
       {'title': 'Introducción al Oído', 'color': KuiColors.primary},
       {'title': 'Armonía y Acordes', 'color': KuiColors.secondary}, 
@@ -267,7 +272,7 @@ class _LevelsTabState extends State<LevelsTab> {
   }
 }
 
-// --- Component Widgets ---
+// --- Unit Section with Strict State Logic ---
 
 class _UnitSection extends StatelessWidget {
   final Unit unit;
@@ -277,6 +282,25 @@ class _UnitSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Logic: Color levels based on their state relative to progress.
+    // 1. Completed (Green)
+    // 2. Active (Purple) - The first non-completed level
+    // 3. Locked (Gray) - Everything after active
+    
+    // Find index of first non-completed level
+    int activeIndex = -1;
+    for (int i = 0; i < unit.levels.length; i++) {
+      if (!unit.levels[i].isCompleted) {
+        activeIndex = i;
+        break;
+      }
+    }
+    
+    // If all are completed, no active? or last is considered done?
+    // Let's assume if all completed, none are "Active" in the "Purple/Next" sense, 
+    // or maybe the last one stays purple? The prompt implies linear progress.
+    // If activeIndex == -1, meant all are completed.
+
     return Opacity(
       opacity: unit.isLocked ? 0.6 : 1.0,
       child: Column(
@@ -288,27 +312,35 @@ class _UnitSection extends StatelessWidget {
               final index = entry.key;
               final levelWP = entry.value;
               
-              // Logic to match screenshot exactly:
-              // Index 0 -> Completed (Green)
-              // Index 1 -> Active (Purple)
-              // Index 2+ -> Locked (Gray)
+              LevelCardState state;
               
-              // We'll trust real data if available, but for visual consistency with request "copy style":
-              // If completed -> Green
-              // If not completed but unlocked -> Purple
-              //If locked -> Gray
+              if (activeIndex == -1) {
+                // All completed
+                state = LevelCardState.completed;
+              } else {
+                if (index < activeIndex) {
+                  state = LevelCardState.completed;
+                } else if (index == activeIndex) {
+                  // This is the one user should work on
+                  state = LevelCardState.active;
+                } else {
+                  // After active -> Locked/Future
+                  state = LevelCardState.locked;
+                }
+              }
               
-              final bool isFirst = index == 0;
-              final bool isSecond = index == 1;
+              // Handle clickable: Locked levels are disabled.
+              // Active and Completed are clickable.
+              final isClickable = state != LevelCardState.locked;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: _LevelCard(
                   levelWP: levelWP, 
-                  onTap: () => onLevelTap(levelWP),
-                  // Overriding state for demo fidelity if stars are empty, 
-                  // but ideally we rely on levelWP.stars
-                  forceActive: isSecond && levelWP.stars == 0 && levelWP.unlockedDifficulty > 0,
+                  onTap: () {
+                     if (isClickable) onLevelTap(levelWP);
+                  },
+                  state: state,
                 ),
               );
             }),
@@ -331,7 +363,7 @@ class _RewardCard extends StatelessWidget {
     return _GameButton(
       color: KuiColors.bgReward,
       borderColor: KuiColors.borderReward,
-      shadowColor: const Color(0xFFE6C60D), // Darker yellow shadow
+      shadowColor: const Color(0xFFE6C60D), 
       borderRadius: 32, 
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -446,24 +478,18 @@ class _UnitHeader extends StatelessWidget {
 
 class _LevelCard extends StatelessWidget {
   final LevelWithProgress levelWP;
-  final VoidCallback onTap;
-  final bool forceActive;
+  final VoidCallback? onTap;
+  final LevelCardState state;
 
   const _LevelCard({
     required this.levelWP, 
     required this.onTap,
-    this.forceActive = false,
+    required this.state,
   });
 
   @override
   Widget build(BuildContext context) {
-    final level = levelWP.level;
-    final int stars = levelWP.stars;
-    
-    final bool isCompleted = stars == 3;
-    final bool isLocked = levelWP.unlockedDifficulty == 0; 
-    final bool isActive = (forceActive || (!isCompleted && !isLocked)); 
-    
+    // Styles mapping
     Color borderColor;
     Color bgColor;
     Color shadowColor;
@@ -472,34 +498,38 @@ class _LevelCard extends StatelessWidget {
     IconData leadingIcon;
     Color leadingIconColor;
     
-    if (isCompleted) {
-      borderColor = KuiColors.secondary; // Green
-      bgColor = KuiColors.bgCompleted;
-      shadowColor = KuiColors.secondaryDark; // Green Shadow
-      iconCircleColor = KuiColors.secondary;
-      iconCircleShadow = KuiColors.secondaryDark;
-      leadingIcon = Icons.check_rounded;
-      leadingIconColor = Colors.white;
-    } else if (isActive) {
-      borderColor = KuiColors.primary; // Purple
-      bgColor = KuiColors.bgActive;
-      shadowColor = KuiColors.primaryDark; // Purple Shadow
-      iconCircleColor = KuiColors.primary;
-      iconCircleShadow = KuiColors.primaryDark;
-      leadingIcon = Icons.music_note_rounded;
-      leadingIconColor = Colors.white;
-    } else {
-      borderColor = KuiColors.borderLocked;
-      bgColor = KuiColors.bgLocked;
-      shadowColor = KuiColors.shadowLocked; // Gray Shadow
-      iconCircleColor = KuiColors.borderLocked; 
-      iconCircleShadow = Colors.transparent;
-      leadingIcon = Icons.lock_rounded;
-      leadingIconColor = Colors.grey;
+    switch (state) {
+      case LevelCardState.completed:
+        borderColor = KuiColors.secondary; // Green
+        bgColor = KuiColors.bgStandard; // White
+        shadowColor = KuiColors.secondaryDark; // Green Shadow
+        iconCircleColor = KuiColors.secondary;
+        iconCircleShadow = KuiColors.secondaryDark;
+        leadingIcon = Icons.check_rounded;
+        leadingIconColor = Colors.white;
+        break;
+      case LevelCardState.active:
+        borderColor = KuiColors.primary; // Purple
+        bgColor = KuiColors.bgStandard; // White
+        shadowColor = KuiColors.primaryDark; // Purple Shadow
+        iconCircleColor = KuiColors.primary;
+        iconCircleShadow = KuiColors.primaryDark;
+        leadingIcon = Icons.music_note_rounded;
+        leadingIconColor = Colors.white;
+        break;
+      case LevelCardState.locked:
+        borderColor = KuiColors.borderLocked; // Gray
+        bgColor = KuiColors.bgLocked; // Grayish
+        shadowColor = KuiColors.shadowLocked; // Dark Gray Shadow
+        iconCircleColor = KuiColors.borderLocked; 
+        iconCircleShadow = Colors.transparent;
+        leadingIcon = Icons.lock_rounded;
+        leadingIconColor = Colors.grey;
+        break;
     }
 
     return _GameButton(
-      onTap: isLocked ? null : onTap,
+      onTap: onTap,
       color: bgColor,
       borderColor: borderColor,
       shadowColor: shadowColor,
@@ -519,7 +549,7 @@ class _LevelCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: iconCircleColor,
                     shape: BoxShape.circle,
-                    boxShadow: !isLocked ? [
+                    boxShadow: state != LevelCardState.locked ? [
                        BoxShadow(
                           color: iconCircleShadow, 
                           offset: const Offset(0, 4), 
@@ -540,23 +570,23 @@ class _LevelCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        level.name, 
+                        levelWP.level.name, 
                         style: GoogleFonts.nunito(
                           fontWeight: FontWeight.w800,
                           fontSize: 17,
-                          color: isLocked ? Colors.grey[400] : const Color(0xFF2D2D2D),
+                          color: state == LevelCardState.locked ? Colors.grey[400] : const Color(0xFF2D2D2D),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (isCompleted)
+                      if (state == LevelCardState.completed)
                           Row(
                               children: List.generate(3, (index) => Icon(
                                  Icons.star_rounded,
-                                 color: KuiColors.accent,
+                                 color: KuiColors.accent, // Yellow stars
                                  size: 20)
                               )
                           )
-                      else if (isActive)
+                      else if (state == LevelCardState.active)
                           Text(
                             '¡EN CURSO!',
                             style: GoogleFonts.nunito(
@@ -575,7 +605,7 @@ class _LevelCard extends StatelessWidget {
             ),
             
             // "PRÓXIMO" Badge (Only for Active)
-            if (isActive)
+            if (state == LevelCardState.active)
                Positioned(
                   top: -22, 
                   right: -8, 
@@ -604,7 +634,7 @@ class _LevelCard extends StatelessWidget {
   }
 }
 
-// --- Animation Widget ---
+// --- Animation Widget (Refined) ---
 
 class _GameButton extends StatefulWidget {
   final VoidCallback? onTap;
@@ -650,9 +680,8 @@ class _GameButtonState extends State<_GameButton> {
 
   @override
   Widget build(BuildContext context) {
-    // Solid shadow effect
     final bool isPressed = _isPressed;
-    final double offset = isPressed ? 0 : 5; 
+    final double shadowHeight = 4.0; 
     
     return GestureDetector(
       onTapDown: _handleTapDown,
@@ -660,10 +689,10 @@ class _GameButtonState extends State<_GameButton> {
       onTapCancel: _handleTapCancel,
       child: Stack(
          children: [
-            // Shadow Layer (Manually positioned solid color)
+            // Shadow Layer: Positioned to create a solid block shadow
             if (!isPressed)
              Positioned(
-               top: 5,
+               top: shadowHeight,
                left: 0,
                right: 0,
                bottom: 0,
@@ -674,11 +703,20 @@ class _GameButtonState extends State<_GameButton> {
                  ),
                ),
              ),
-             
-            // Main Button Layer
+            
+            // Invisible placeholder for layout size stability
+            if (!isPressed)
+               Container(
+                  height: shadowHeight, 
+                  width: double.infinity,
+                  color: Colors.transparent,
+               ),
+
+            // Button Surface
             AnimatedContainer(
               duration: const Duration(milliseconds: 100),
-              transform: Matrix4.translationValues(0, isPressed ? 5 : 0, 0),
+              transform: Matrix4.translationValues(0, isPressed ? shadowHeight : 0, 0),
+              margin: EdgeInsets.only(bottom: isPressed ? 0 : shadowHeight),
               decoration: BoxDecoration(
                 color: widget.color,
                 borderRadius: BorderRadius.circular(widget.borderRadius),
