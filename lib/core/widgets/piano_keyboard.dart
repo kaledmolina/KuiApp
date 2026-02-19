@@ -69,11 +69,12 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Let the keys shrink to fit exactly on the screen constraints
         double keyWidth = constraints.maxWidth / whiteKeys.length;
-        if (keyWidth < 40.0) {
-          keyWidth = 40.0; // Ensure keys are wide enough to tap
-        }
-        final totalWidth = keyWidth * whiteKeys.length;
+        
+        // If there are too many octaves (>2), we could still use scroll, but the user requested 
+        // to fit them (specifically 2 octaves) without scrolling.
+        final totalWidth = constraints.maxWidth;
         final blackKeyWidth = keyWidth * 0.6;
         final height = 200.0;
 
@@ -112,12 +113,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
           ),
         );
 
-        if (totalWidth > constraints.maxWidth) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: piano,
-          );
-        }
         return piano;
       },
     );
