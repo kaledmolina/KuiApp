@@ -42,8 +42,8 @@ class LevelWithProgress {
   // 4 = Passed Hard (3 stars)
   int get stars => (unlockedDifficulty - 1).clamp(0, 3);
   
-  // A level is "Completed" if passed at least Easy (1 star).
-  bool get isCompleted => stars >= 1;
+  // A level is "Completed" if passed Hard (3 stars).
+  bool get isCompleted => stars >= 3;
 }
 
 class Unit {
