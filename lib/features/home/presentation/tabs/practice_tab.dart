@@ -75,8 +75,8 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
       // Fetch Octave 4 for simple practice
       allNotes = await repo.getNoteAudioList(4);
       
-      // Default to picking all notes initially
-      selectedNotes = allNotes.map((n) => n.fullName).toSet();
+      // Default to empty initially, so they have to choose
+      selectedNotes = {};
 
       // Pre-download audio
       List<String> failedRecs = [];
@@ -383,7 +383,7 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
                     },
                     selectedColor: Theme.of(context).colorScheme.primaryContainer,
                     checkmarkColor: Theme.of(context).colorScheme.primary,
-                    showCheckmark: false,
+                    showCheckmark: true,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   );
                 }).toList(),
