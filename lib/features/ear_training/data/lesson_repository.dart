@@ -110,7 +110,7 @@ class LessonRepository {
       final dir = await getApplicationDocumentsDirectory();
       
       // Cache buster: Append a version tag to the filename so the app ignores old files
-      final versionedFilename = filename.replaceAll('.webm', '_v3.webm');
+      final versionedFilename = filename.replaceAll('.webm', '_v4.webm');
       final file = File('${dir.path}/$versionedFilename');
 
       if (await file.exists()) {
