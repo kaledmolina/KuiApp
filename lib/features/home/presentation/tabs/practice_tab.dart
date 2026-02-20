@@ -433,10 +433,10 @@ class _PracticeTabState extends State<PracticeTab> with TickerProviderStateMixin
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: selectedNotes.isEmpty ? null : _startQuiz,
+                  onPressed: selectedNotes.length < 2 ? null : _startQuiz,
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: Text(
-                    selectedNotes.isEmpty ? 'Selecciona notas...' : 'Entrenar Oído', 
+                    selectedNotes.length < 2 ? 'Faltan notas...' : 'Entrenar Oído', 
                     style: const TextStyle(fontWeight: FontWeight.bold)
                   ),
                   style: ElevatedButton.styleFrom(
